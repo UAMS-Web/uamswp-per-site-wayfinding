@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Per-Site robots.txt, llms.txt, llms-full.txt
- * Description: Serves unique robots.txt, llms.txt, and llms-full.txt per multisite subsite. Production build for uamsdev.com.
- * Version:     1.0.0
+ * Description: Serves unique robots.txt, llms.txt, and llms-full.txt per multisite subsite. Production build for uamsdev.com. Includes optional GA4 Measurement Protocol tracking.
+ * Version:     1.1.0
  * Network:     true
  */
 
@@ -67,10 +67,67 @@ function ptxt_wildcard_disallows_root($content) {
 }
 
 /**
- * 1. Override the virtual robots.txt per subsite.
+ * Fire a GA4 Measurement Protocol event for a wayfinding file request.
+ *
+ * Fire-and-forget: short timeout, non-blocking, never blocks the response.
+ * Silently no-ops if the GA4 measurement ID or API secret are not configured,
+ * so the plugin continues to serve files normally even without tracking set up.
+ *
+ * @param string $file_name One of 'robots.txt', 'llms.txt', 'llms-full.txt'.
+ */
+function ptxt_track_request($file_name) {
+    $measurement_id = get_site_option('ptxt_ga4_measurement_id', '');
+    $api_secret     = get_site_option('ptxt_ga4_api_secret', '');
+
+    if (empty($measurement_id) || empty($api_secret)) {
+        return;
+    }
+
+    $user_agent = isset($_SERVER['HTTP_USER_AGENT'])
+        ? substr((string) $_SERVER['HTTP_USER_AGENT'], 0, 500)
+        : 'unknown';
+    $ip         = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
+    $site_host  = parse_url(home_url(), PHP_URL_HOST);
+
+    // Synthesize a stable client_id per user agent so GA4 groups crawler hits sensibly.
+    $client_id = 'bot.' . substr(md5($user_agent), 0, 16);
+
+    $payload = [
+        'client_id' => $client_id,
+        'events'    => [[
+            'name'   => 'wayfinding_request',
+            'params' => [
+                'file_name'            => $file_name,
+                'user_agent'           => $user_agent,
+                'requester_ip'         => $ip,
+                'site_host'            => $site_host,
+                'engagement_time_msec' => 1,
+            ],
+        ]],
+    ];
+
+    $endpoint = add_query_arg(
+        [
+            'measurement_id' => $measurement_id,
+            'api_secret'     => $api_secret,
+        ],
+        'https://www.google-analytics.com/mp/collect'
+    );
+
+    wp_remote_post($endpoint, [
+        'timeout'  => 1,
+        'blocking' => false,
+        'headers'  => ['Content-Type' => 'application/json'],
+        'body'     => wp_json_encode($payload),
+    ]);
+}
+
+/**
+ * 1. Override the virtual robots.txt per subsite, and track the request.
  */
 add_filter('robots_txt', function ($output, $public) {
     $custom = get_option('custom_robots_txt');
+    ptxt_track_request('robots.txt');
     return $custom !== false && $custom !== '' ? $custom : $output;
 }, 10, 2);
 
@@ -92,11 +149,13 @@ add_action('template_redirect', function () {
     if (get_query_var('llms_txt')) {
         header('Content-Type: text/plain; charset=utf-8');
         echo get_option('custom_llms_txt', "# llms.txt not yet configured for " . home_url() . "\n");
+        ptxt_track_request('llms.txt');
         exit;
     }
     if (get_query_var('llms_full_txt')) {
         header('Content-Type: text/plain; charset=utf-8');
         echo get_option('custom_llms_full_txt', "# llms-full.txt not yet configured for " . home_url() . "\n");
+        ptxt_track_request('llms-full.txt');
         exit;
     }
 });
@@ -114,7 +173,7 @@ add_filter('redirect_canonical', function ($redirect_url, $requested_url) {
 }, 10, 2);
 
 /**
- * 3. Admin UI under Settings, super-admin only, with a Disallow: / confirmation guard.
+ * 3. Per-site admin UI under Settings, super-admin only, with a Disallow: / confirmation guard.
  */
 add_action('admin_menu', function () {
     if (!is_super_admin()) {
@@ -171,6 +230,11 @@ function ptxt_render_settings_page() {
     }
 
     $current_site_url = home_url();
+
+    // Surface tracking status so super admins know whether GA4 events are firing.
+    $tracking_id     = get_site_option('ptxt_ga4_measurement_id', '');
+    $tracking_secret = get_site_option('ptxt_ga4_api_secret', '');
+    $tracking_on     = !empty($tracking_id) && !empty($tracking_secret);
     ?>
     <div class="wrap">
         <h1>Site Files</h1>
@@ -180,6 +244,16 @@ function ptxt_render_settings_page() {
             <code><?php echo esc_html($current_site_url); ?>/llms.txt</code>, and
             <code><?php echo esc_html($current_site_url); ?>/llms-full.txt</code>.
             Each subsite has its own content. Super admins only.
+        </p>
+
+        <p>
+            <strong>GA4 tracking:</strong>
+            <?php if ($tracking_on) : ?>
+                <span style="color:#1A6B3A;">Enabled</span> (configured in Network Admin &rarr; Settings &rarr; Site Files Tracking).
+            <?php else : ?>
+                <span style="color:#B91C1C;">Disabled</span>. Configure the GA4 measurement ID and API secret in
+                Network Admin &rarr; Settings &rarr; Site Files Tracking to begin logging requests.
+            <?php endif; ?>
         </p>
 
         <?php if ($saved) : ?>
@@ -243,6 +317,115 @@ function ptxt_render_settings_page() {
                 spellcheck="false"><?php echo $llms_full; ?></textarea>
 
             <p><?php submit_button('Save Site Files'); ?></p>
+        </form>
+    </div>
+    <?php
+}
+
+/**
+ * 4. Network-level admin UI for GA4 Measurement Protocol credentials.
+ *
+ * Tracking credentials are stored as site-wide options (get_site_option /
+ * update_site_option) so one configuration drives telemetry for every subsite.
+ */
+add_action('network_admin_menu', function () {
+    add_submenu_page(
+        'settings.php',
+        'Site Files Tracking',
+        'Site Files Tracking',
+        'manage_network_options',
+        'site-txt-files-tracking',
+        'ptxt_render_network_tracking_page'
+    );
+});
+
+function ptxt_render_network_tracking_page() {
+    if (!current_user_can('manage_network_options')) {
+        wp_die('You do not have permission to access this page.');
+    }
+
+    $saved = false;
+
+    if (isset($_POST['site_txt_tracking_nonce']) && wp_verify_nonce($_POST['site_txt_tracking_nonce'], 'save_site_txt_tracking')) {
+        $measurement_id = isset($_POST['ptxt_ga4_measurement_id'])
+            ? trim(wp_unslash($_POST['ptxt_ga4_measurement_id']))
+            : '';
+        $api_secret = isset($_POST['ptxt_ga4_api_secret'])
+            ? trim(wp_unslash($_POST['ptxt_ga4_api_secret']))
+            : '';
+
+        update_site_option('ptxt_ga4_measurement_id', sanitize_text_field($measurement_id));
+        update_site_option('ptxt_ga4_api_secret',     sanitize_text_field($api_secret));
+        $saved = true;
+    }
+
+    $measurement_id = esc_attr(get_site_option('ptxt_ga4_measurement_id', ''));
+    $api_secret     = esc_attr(get_site_option('ptxt_ga4_api_secret', ''));
+    ?>
+    <div class="wrap">
+        <h1>Site Files Tracking</h1>
+        <p>
+            Optional GA4 Measurement Protocol logging for requests to
+            <code>robots.txt</code>, <code>llms.txt</code>, and <code>llms-full.txt</code>
+            across every subsite in this network. Leave both fields empty to disable tracking.
+        </p>
+        <p class="description">
+            Events are sent as <code>wayfinding_request</code> with parameters
+            <code>file_name</code>, <code>user_agent</code>, <code>requester_ip</code>, and <code>site_host</code>.
+            To report on these in Explorations, register them as custom dimensions in GA4
+            (Admin &rarr; Custom definitions). Realtime reports work without that step.
+        </p>
+
+        <?php if ($saved) : ?>
+            <div class="notice notice-success is-dismissible"><p>Tracking settings saved.</p></div>
+        <?php endif; ?>
+
+        <form method="post">
+            <?php wp_nonce_field('save_site_txt_tracking', 'site_txt_tracking_nonce'); ?>
+            <table class="form-table" role="presentation">
+                <tbody>
+                    <tr>
+                        <th scope="row">
+                            <label for="ptxt_ga4_measurement_id">GA4 Measurement ID</label>
+                        </th>
+                        <td>
+                            <input
+                                type="text"
+                                id="ptxt_ga4_measurement_id"
+                                name="ptxt_ga4_measurement_id"
+                                value="<?php echo $measurement_id; ?>"
+                                class="regular-text code"
+                                placeholder="G-XXXXXXXXXX"
+                                autocomplete="off">
+                            <p class="description">
+                                Format: <code>G-XXXXXXXXXX</code>. Find it in GA4 under
+                                Admin &rarr; Data Streams &rarr; (your web stream).
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">
+                            <label for="ptxt_ga4_api_secret">Measurement Protocol API Secret</label>
+                        </th>
+                        <td>
+                            <input
+                                type="password"
+                                id="ptxt_ga4_api_secret"
+                                name="ptxt_ga4_api_secret"
+                                value="<?php echo $api_secret; ?>"
+                                class="regular-text code"
+                                autocomplete="off">
+                            <p class="description">
+                                Create one in GA4 under
+                                Admin &rarr; Data Streams &rarr; (your web stream) &rarr;
+                                Measurement Protocol API secrets &rarr; Create.
+                                Paste the secret <em>value</em>, not the secret name.
+                            </p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <p><?php submit_button('Save Tracking Settings'); ?></p>
         </form>
     </div>
     <?php

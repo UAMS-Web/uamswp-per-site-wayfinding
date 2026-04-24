@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: UAMSWP Per-Site Wayfinding
+ * Plugin Name: UAMSWP Per-Site robots.txt, llms.txt, llms-full.txt
  * Description: Serves unique robots.txt, llms.txt, and llms-full.txt per multisite subsite. Multisite-type-aware: per-subsite robots.txt editor appears on all subsites of subdomain multisites, but only on the network root site of subdirectory multisites (since HTTP only honors one robots.txt per host). Includes a multisite sitemap-block generator for copy-paste into physical robots.txt files, and optional GA4 Measurement Protocol tracking for llms.txt / llms-full.txt requests.
- * Version:     1.3.1
- * Author:     Brent Passmore and Claude.ai
+ * Version:     1.3.2
+ * Author:      Brent Passmore and Claude.ai
  * Network:     true
  *
  * Design notes:
@@ -280,6 +280,22 @@ add_action('template_redirect', function () {
  */
 add_filter('redirect_canonical', function ($redirect_url, $requested_url) {
     $path = parse_url($requested_url, PHP_URL_PATH);
+    if ($path === null || $path === '') {
+        return $redirect_url;
+    }
+
+    // On subdirectory multisites, the request path includes the subsite's
+    // path prefix (e.g. /pharmacy-services/llms.txt). Strip the current
+    // subsite's home-URL path before checking so the filter matches on
+    // both root-site and child-subsite requests.
+    $home_path = parse_url(home_url('/'), PHP_URL_PATH);
+    if (is_string($home_path) && $home_path !== '/' && $home_path !== '') {
+        $home_path = '/' . trim($home_path, '/') . '/';
+        if (strpos($path, $home_path) === 0) {
+            $path = '/' . substr($path, strlen($home_path));
+        }
+    }
+
     if ($path === '/llms.txt' || $path === '/llms-full.txt') {
         return false;
     }

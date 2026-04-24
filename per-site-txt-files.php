@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Per-Site robots.txt, llms.txt, llms-full.txt
  * Description: Serves unique robots.txt, llms.txt, and llms-full.txt per multisite subsite. Multisite-type-aware: per-subsite robots.txt editor appears on all subsites of subdomain multisites, but only on the network root site of subdirectory multisites (since HTTP only honors one robots.txt per host). Includes a multisite sitemap-block generator for copy-paste into physical robots.txt files, and optional GA4 Measurement Protocol tracking for llms.txt / llms-full.txt requests.
- * Version:     1.3.0
+ * Version:     1.3.1
  * Network:     true
  *
  * Design notes:
@@ -125,10 +125,8 @@ function ptxt_build_multisite_sitemap_block($sitemap_path = '/sitemaps.xml') {
     }
 
     $sites = get_sites([
-        'public'  => 1,
-        'number'  => 500,
-        'orderby' => 'id',
-        'order'   => 'ASC',
+        'public' => 1,
+        'number' => 500,
     ]);
 
     if (empty($sites)) {
@@ -138,15 +136,37 @@ function ptxt_build_multisite_sitemap_block($sitemap_path = '/sitemaps.xml') {
     // Normalize path to guarantee exactly one leading slash.
     $sitemap_path = '/' . ltrim($sitemap_path, '/');
 
-    $lines = ["# Sitemaps"];
+    // Collect the root site's sitemap line separately so it always sorts
+    // to the top of the block, then collect child subsite lines into a
+    // list that will be sorted alphabetically by full URL.
+    $root_line   = null;
+    $child_lines = [];
+    $main_site_id = function_exists('get_main_site_id') ? get_main_site_id() : 1;
 
     foreach ($sites as $site) {
         switch_to_blog($site->blog_id);
         if ('1' === (string) get_option('blog_public')) {
             $home = rtrim(get_home_url($site->blog_id), '/');
-            $lines[] = "Sitemap: {$home}{$sitemap_path}";
+            $line = "Sitemap: {$home}{$sitemap_path}";
+
+            if ((int) $site->blog_id === (int) $main_site_id) {
+                $root_line = $line;
+            } else {
+                $child_lines[] = $line;
+            }
         }
         restore_current_blog();
+    }
+
+    // Case-insensitive alphabetical sort for stable, human-friendly output.
+    sort($child_lines, SORT_STRING | SORT_FLAG_CASE);
+
+    $lines = ["# Sitemaps"];
+    if ($root_line !== null) {
+        $lines[] = $root_line;
+    }
+    foreach ($child_lines as $line) {
+        $lines[] = $line;
     }
 
     return implode("\n", $lines) . "\n";

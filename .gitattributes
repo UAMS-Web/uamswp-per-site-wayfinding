@@ -1,0 +1,4 @@
+# Keep the GitHub download to what the plugin runs (keep-the-download-to-what-runs).
+/* export-ignore
+/.* export-ignore
+/uamswp-per-site-wayfinding.php -export-ignore

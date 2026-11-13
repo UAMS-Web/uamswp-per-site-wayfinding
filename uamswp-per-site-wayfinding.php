@@ -81,6 +81,8 @@ function ptxt_physical_robots_exists(): bool
  * Parses robots.txt by User-agent block so that Disallow: / rules targeted
  * at specific bots (SemrushBot, AhrefsBot, etc.) do not trigger the guard.
  * Only a blanket block of all crawlers does.
+ *
+ * @param  mixed  $content  The saved robots.txt; anything that is not a non-empty string does not block.
  */
 function ptxt_wildcard_disallows_root($content): bool
 {

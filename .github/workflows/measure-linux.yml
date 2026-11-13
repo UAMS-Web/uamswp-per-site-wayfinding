@@ -1,0 +1,21 @@
+name: Linux measurement
+
+on:
+  pull_request:
+
+jobs:
+  measure:
+    if: github.head_ref == '14-linux-measurement'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: pcov
+          ini-values: pcov.directory=., pcov.enabled=1
+      - run: composer install --no-interaction --no-progress
+      - run: php -v && uname -sr
+      - run: vendor/bin/pest 2>&1 | tail -4
+      - run: vendor/bin/pest --coverage 2>&1 | tail -4
+      - run: vendor/bin/pest --mutate --path=uamswp-per-site-wayfinding.php 2>&1 | tail -12

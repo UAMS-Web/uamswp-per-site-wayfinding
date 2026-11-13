@@ -20,7 +20,19 @@
       "run": "php -l",
       "each": [
         "**/*.php",
-        "!vendor/**"
+        "!vendor/**",
+        "!tests/Integration/vendor/**"
+      ],
+      "always": true
+    },
+    {
+      "name": "lint-floor",
+      "run": "php -l",
+      "php": "8.2",
+      "each": [
+        "**/*.php",
+        "!vendor/**",
+        "!tests/**"
       ],
       "always": true
     },

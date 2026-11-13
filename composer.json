@@ -3,6 +3,9 @@
     "description": "Serves unique robots.txt, llms.txt, and llms-full.txt per WordPress multisite subsite. Development dependencies only; nothing here is installed into production.",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
+    "require": {
+        "php": ">=8.2"
+    },
     "require-dev": {
         "brain/monkey": "^2.7",
         "pestphp/pest": "^5.3"

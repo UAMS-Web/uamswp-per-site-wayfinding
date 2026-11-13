@@ -10,12 +10,14 @@ declare(strict_types=1);
 
 use Brain\Monkey\Functions;
 
+use function Brain\Monkey\Functions\when;
+
 beforeEach(function (): void {
     // The plugin registers hooks and an activation hook at file scope. Brain
     // Monkey supplies add_action() and add_filter(); the activation hook is
     // stubbed here. require_once loads the file once per process, so the
     // functions stay defined for later tests.
-    Functions\when('register_activation_hook')->justReturn(null);
+    when('register_activation_hook')->justReturn();
 
     require_once __DIR__.'/../../uamswp-per-site-wayfinding.php';
 });

@@ -28,16 +28,16 @@
  *     robots.txt hits bypass WordPress entirely and must be observed
  *     through server access logs.
  */
-
-if (!defined('ABSPATH')) {
+if (! defined('ABSPATH')) {
     exit;
 }
 
 /**
  * Default robots.txt content for a newly configured site.
  */
-function ptxt_default_robots() {
-    return "User-agent: *\nAllow: /\n\nSitemap: " . home_url('/sitemap.xml') . "\n";
+function ptxt_default_robots(): string
+{
+    return "User-agent: *\nAllow: /\n\nSitemap: ".home_url('/sitemap.xml')."\n";
 }
 
 /**
@@ -49,13 +49,15 @@ function ptxt_default_robots() {
  *
  * @return bool
  */
-function ptxt_robots_editor_applies() {
-    if (!is_multisite()) {
+function ptxt_robots_editor_applies()
+{
+    if (! is_multisite()) {
         return true;
     }
     if (is_subdomain_install()) {
         return true;
     }
+
     return is_main_site();
 }
 
@@ -65,11 +67,10 @@ function ptxt_robots_editor_applies() {
  * When true, the web server serves that file in preference to any virtual
  * content WordPress produces. The plugin's robots.txt editor on the root
  * site is effectively shadowed until the physical file is removed.
- *
- * @return bool
  */
-function ptxt_physical_robots_exists() {
-    return defined('ABSPATH') && file_exists(ABSPATH . 'robots.txt');
+function ptxt_physical_robots_exists(): bool
+{
+    return defined('ABSPATH') && file_exists(ABSPATH.'robots.txt');
 }
 
 /**
@@ -80,16 +81,17 @@ function ptxt_physical_robots_exists() {
  * at specific bots (SemrushBot, AhrefsBot, etc.) do not trigger the guard.
  * Only a blanket block of all crawlers does.
  */
-function ptxt_wildcard_disallows_root($content) {
-    if (!is_string($content) || $content === '') {
+function ptxt_wildcard_disallows_root($content): bool
+{
+    if (! is_string($content) || $content === '') {
         return false;
     }
 
     $lines = preg_split('/\r\n|\r|\n/', $content);
 
-    $in_wildcard_group      = false;
+    $in_wildcard_group = false;
     $wildcard_disallow_root = false;
-    $wildcard_allow_root    = false;
+    $wildcard_allow_root = false;
 
     foreach ($lines as $line) {
         $line = trim(preg_replace('/#.*$/', '', $line));
@@ -100,10 +102,11 @@ function ptxt_wildcard_disallows_root($content) {
         if (preg_match('/^User-agent:\s*(.+)$/i', $line, $m)) {
             $agent = strtolower(trim($m[1]));
             $in_wildcard_group = ($agent === '*');
+
             continue;
         }
 
-        if (!$in_wildcard_group) {
+        if (! $in_wildcard_group) {
             continue;
         }
 
@@ -114,7 +117,7 @@ function ptxt_wildcard_disallows_root($content) {
         }
     }
 
-    return $wildcard_disallow_root && !$wildcard_allow_root;
+    return $wildcard_disallow_root && ! $wildcard_allow_root;
 }
 
 /**
@@ -123,11 +126,11 @@ function ptxt_wildcard_disallows_root($content) {
  * Used by the network-admin sitemap generator page. Super admins copy the
  * output and paste it into the physical robots.txt for the host.
  *
- * @param string $sitemap_path Path appended to each subsite's home URL. Default '/sitemaps.xml'.
- * @return string
+ * @param  string  $sitemap_path  Path appended to each subsite's home URL. Default '/sitemaps.xml'.
  */
-function ptxt_build_multisite_sitemap_block($sitemap_path = '/sitemaps.xml') {
-    if (!function_exists('get_sites') || !is_multisite()) {
+function ptxt_build_multisite_sitemap_block($sitemap_path = '/sitemaps.xml'): string
+{
+    if (! function_exists('get_sites') || ! is_multisite()) {
         return '';
     }
 
@@ -141,18 +144,18 @@ function ptxt_build_multisite_sitemap_block($sitemap_path = '/sitemaps.xml') {
     }
 
     // Normalize path to guarantee exactly one leading slash.
-    $sitemap_path = '/' . ltrim($sitemap_path, '/');
+    $sitemap_path = '/'.ltrim($sitemap_path, '/');
 
     // Collect the root site's sitemap line separately so it always sorts
     // to the top of the block, then collect child subsite lines into a
     // list that will be sorted alphabetically by full URL.
-    $root_line   = null;
+    $root_line = null;
     $child_lines = [];
     $main_site_id = function_exists('get_main_site_id') ? get_main_site_id() : 1;
 
     foreach ($sites as $site) {
         switch_to_blog($site->blog_id);
-        if ('1' === (string) get_option('blog_public')) {
+        if ((string) get_option('blog_public') === '1') {
             $home = rtrim(get_home_url($site->blog_id), '/');
             $line = "Sitemap: {$home}{$sitemap_path}";
 
@@ -168,7 +171,7 @@ function ptxt_build_multisite_sitemap_block($sitemap_path = '/sitemaps.xml') {
     // Case-insensitive alphabetical sort for stable, human-friendly output.
     sort($child_lines, SORT_STRING | SORT_FLAG_CASE);
 
-    $lines = ["# Sitemaps"];
+    $lines = ['# Sitemaps'];
     if ($root_line !== null) {
         $lines[] = $root_line;
     }
@@ -176,7 +179,7 @@ function ptxt_build_multisite_sitemap_block($sitemap_path = '/sitemaps.xml') {
         $lines[] = $line;
     }
 
-    return implode("\n", $lines) . "\n";
+    return implode("\n", $lines)."\n";
 }
 
 /**
@@ -185,13 +188,14 @@ function ptxt_build_multisite_sitemap_block($sitemap_path = '/sitemaps.xml') {
  * Fire-and-forget: short timeout, non-blocking. Silently no-ops when
  * credentials are not configured.
  *
- * @param string $file_name One of 'llms.txt', 'llms-full.txt'. robots.txt is not
- *                          tracked because physical robots.txt requests bypass
- *                          WordPress entirely.
+ * @param  string  $file_name  One of 'llms.txt', 'llms-full.txt'. robots.txt is not
+ *                             tracked because physical robots.txt requests bypass
+ *                             WordPress entirely.
  */
-function ptxt_track_request($file_name) {
+function ptxt_track_request($file_name): void
+{
     $measurement_id = get_site_option('ptxt_ga4_measurement_id', '');
-    $api_secret     = get_site_option('ptxt_ga4_api_secret', '');
+    $api_secret = get_site_option('ptxt_ga4_api_secret', '');
 
     if (empty($measurement_id) || empty($api_secret)) {
         return;
@@ -200,20 +204,20 @@ function ptxt_track_request($file_name) {
     $user_agent = isset($_SERVER['HTTP_USER_AGENT'])
         ? substr((string) $_SERVER['HTTP_USER_AGENT'], 0, 500)
         : 'unknown';
-    $ip        = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
+    $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
     $site_host = parse_url(home_url(), PHP_URL_HOST);
 
-    $client_id = 'bot.' . substr(md5($user_agent), 0, 16);
+    $client_id = 'bot.'.substr(md5($user_agent), 0, 16);
 
     $payload = [
         'client_id' => $client_id,
-        'events'    => [[
-            'name'   => 'wayfinding_request',
+        'events' => [[
+            'name' => 'wayfinding_request',
             'params' => [
-                'file_name'            => $file_name,
-                'user_agent'           => $user_agent,
-                'requester_ip'         => $ip,
-                'site_host'            => $site_host,
+                'file_name' => $file_name,
+                'user_agent' => $user_agent,
+                'requester_ip' => $ip,
+                'site_host' => $site_host,
                 'engagement_time_msec' => 1,
             ],
         ]],
@@ -222,16 +226,16 @@ function ptxt_track_request($file_name) {
     $endpoint = add_query_arg(
         [
             'measurement_id' => $measurement_id,
-            'api_secret'     => $api_secret,
+            'api_secret' => $api_secret,
         ],
         'https://www.google-analytics.com/mp/collect'
     );
 
     wp_remote_post($endpoint, [
-        'timeout'  => 1,
+        'timeout' => 1,
         'blocking' => false,
-        'headers'  => ['Content-Type' => 'application/json'],
-        'body'     => wp_json_encode($payload),
+        'headers' => ['Content-Type' => 'application/json'],
+        'body' => wp_json_encode($payload),
     ]);
 }
 
@@ -244,37 +248,39 @@ function ptxt_track_request($file_name) {
  * the browser: Apache / Nginx serves the physical file first.
  */
 add_filter('robots_txt', function ($output, $public) {
-    if (!ptxt_robots_editor_applies()) {
+    if (! ptxt_robots_editor_applies()) {
         return $output;
     }
     $custom = get_option('custom_robots_txt');
+
     return ($custom !== false && $custom !== '') ? $custom : $output;
 }, 10, 2);
 
 /**
  * 2. Register virtual routes for llms.txt and llms-full.txt.
  */
-add_action('init', function () {
-    add_rewrite_rule('^llms\.txt$',      'index.php?llms_txt=1',      'top');
+add_action('init', function (): void {
+    add_rewrite_rule('^llms\.txt$', 'index.php?llms_txt=1', 'top');
     add_rewrite_rule('^llms-full\.txt$', 'index.php?llms_full_txt=1', 'top');
 });
 
 add_filter('query_vars', function ($vars) {
     $vars[] = 'llms_txt';
     $vars[] = 'llms_full_txt';
+
     return $vars;
 });
 
-add_action('template_redirect', function () {
+add_action('template_redirect', function (): void {
     if (get_query_var('llms_txt')) {
         header('Content-Type: text/plain; charset=utf-8');
-        echo get_option('custom_llms_txt', "# llms.txt not yet configured for " . home_url() . "\n");
+        echo get_option('custom_llms_txt', '# llms.txt not yet configured for '.home_url()."\n");
         ptxt_track_request('llms.txt');
         exit;
     }
     if (get_query_var('llms_full_txt')) {
         header('Content-Type: text/plain; charset=utf-8');
-        echo get_option('custom_llms_full_txt', "# llms-full.txt not yet configured for " . home_url() . "\n");
+        echo get_option('custom_llms_full_txt', '# llms-full.txt not yet configured for '.home_url()."\n");
         ptxt_track_request('llms-full.txt');
         exit;
     }
@@ -296,15 +302,16 @@ add_filter('redirect_canonical', function ($redirect_url, $requested_url) {
     // both root-site and child-subsite requests.
     $home_path = parse_url(home_url('/'), PHP_URL_PATH);
     if (is_string($home_path) && $home_path !== '/' && $home_path !== '') {
-        $home_path = '/' . trim($home_path, '/') . '/';
-        if (strpos($path, $home_path) === 0) {
-            $path = '/' . substr($path, strlen($home_path));
+        $home_path = '/'.trim($home_path, '/').'/';
+        if (str_starts_with($path, $home_path)) {
+            $path = '/'.substr($path, strlen($home_path));
         }
     }
 
     if ($path === '/llms.txt' || $path === '/llms-full.txt') {
         return false;
     }
+
     return $redirect_url;
 }, 10, 2);
 
@@ -316,8 +323,8 @@ add_filter('redirect_canonical', function ($redirect_url, $requested_url) {
  * activated. On Network Activation, WordPress fires it once per subsite
  * during activation, which is what we want.
  */
-register_activation_hook(__FILE__, function () {
-    add_rewrite_rule('^llms\.txt$',      'index.php?llms_txt=1',      'top');
+register_activation_hook(__FILE__, function (): void {
+    add_rewrite_rule('^llms\.txt$', 'index.php?llms_txt=1', 'top');
     add_rewrite_rule('^llms-full\.txt$', 'index.php?llms_full_txt=1', 'top');
     flush_rewrite_rules(false);
 });
@@ -325,8 +332,8 @@ register_activation_hook(__FILE__, function () {
 /**
  * 4. Per-site admin UI under Settings, super-admin only, with a Disallow: / confirmation guard.
  */
-add_action('admin_menu', function () {
-    if (!is_super_admin()) {
+add_action('admin_menu', function (): void {
+    if (! is_super_admin()) {
         return;
     }
 
@@ -339,51 +346,52 @@ add_action('admin_menu', function () {
     );
 });
 
-function ptxt_render_settings_page() {
-    if (!is_super_admin()) {
+function ptxt_render_settings_page(): void
+{
+    if (! is_super_admin()) {
         wp_die('You do not have permission to access this page.');
     }
 
-    $saved          = false;
-    $needs_confirm  = false;
+    $saved = false;
+    $needs_confirm = false;
     $robots_applies = ptxt_robots_editor_applies();
 
     if (isset($_POST['site_txt_files_nonce']) && wp_verify_nonce($_POST['site_txt_files_nonce'], 'save_site_txt_files')) {
 
-        $robots_input    = isset($_POST['custom_robots_txt'])    ? wp_unslash($_POST['custom_robots_txt'])    : '';
-        $llms_input      = isset($_POST['custom_llms_txt'])      ? wp_unslash($_POST['custom_llms_txt'])      : '';
+        $robots_input = isset($_POST['custom_robots_txt']) ? wp_unslash($_POST['custom_robots_txt']) : '';
+        $llms_input = isset($_POST['custom_llms_txt']) ? wp_unslash($_POST['custom_llms_txt']) : '';
         $llms_full_input = isset($_POST['custom_llms_full_txt']) ? wp_unslash($_POST['custom_llms_full_txt']) : '';
 
         // Only validate/save robots.txt on subsites where the editor applies.
         $has_disallow_all = $robots_applies && ptxt_wildcard_disallows_root($robots_input);
-        $confirmed        = !empty($_POST['confirm_disallow_all']);
+        $confirmed = ! empty($_POST['confirm_disallow_all']);
 
-        if ($has_disallow_all && !$confirmed) {
+        if ($has_disallow_all && ! $confirmed) {
             $needs_confirm = true;
-            $robots    = esc_textarea($robots_input);
-            $llms      = esc_textarea($llms_input);
+            $robots = esc_textarea($robots_input);
+            $llms = esc_textarea($llms_input);
             $llms_full = esc_textarea($llms_full_input);
         } else {
             if ($robots_applies) {
                 update_option('custom_robots_txt', $robots_input);
             }
-            update_option('custom_llms_txt',      $llms_input);
+            update_option('custom_llms_txt', $llms_input);
             update_option('custom_llms_full_txt', $llms_full_input);
             $saved = true;
         }
     }
 
-    if (!$needs_confirm) {
-        $robots    = esc_textarea(get_option('custom_robots_txt',    ptxt_default_robots()));
-        $llms      = esc_textarea(get_option('custom_llms_txt',      ''));
+    if (! $needs_confirm) {
+        $robots = esc_textarea(get_option('custom_robots_txt', ptxt_default_robots()));
+        $llms = esc_textarea(get_option('custom_llms_txt', ''));
         $llms_full = esc_textarea(get_option('custom_llms_full_txt', ''));
     }
 
     $current_site_url = home_url();
 
-    $tracking_id     = get_site_option('ptxt_ga4_measurement_id', '');
+    $tracking_id = get_site_option('ptxt_ga4_measurement_id', '');
     $tracking_secret = get_site_option('ptxt_ga4_api_secret', '');
-    $tracking_on     = !empty($tracking_id) && !empty($tracking_secret);
+    $tracking_on = ! empty($tracking_id) && ! empty($tracking_secret);
 
     $physical_robots = $robots_applies && ptxt_physical_robots_exists();
     $network_root_admin_url = is_multisite()
@@ -394,9 +402,9 @@ function ptxt_render_settings_page() {
         <h1>Site Files</h1>
         <p>
             These files are served at
-            <?php if ($robots_applies) : ?>
+            <?php if ($robots_applies) { ?>
                 <code><?php echo esc_html($current_site_url); ?>/robots.txt</code>,
-            <?php endif; ?>
+            <?php } ?>
             <code><?php echo esc_html($current_site_url); ?>/llms.txt</code>, and
             <code><?php echo esc_html($current_site_url); ?>/llms-full.txt</code>.
             Each subsite has its own llms.txt and llms-full.txt content. Super admins only.
@@ -404,20 +412,20 @@ function ptxt_render_settings_page() {
 
         <p>
             <strong>GA4 tracking:</strong>
-            <?php if ($tracking_on) : ?>
+            <?php if ($tracking_on) { ?>
                 <span style="color:#1A6B3A;">Enabled</span> (configured in Network Admin &rarr; Settings &rarr; Site Files Tracking).
                 Covers <code>llms.txt</code> and <code>llms-full.txt</code>.
-            <?php else : ?>
+            <?php } else { ?>
                 <span style="color:#B91C1C;">Disabled</span>. Configure the GA4 measurement ID and API secret in
                 Network Admin &rarr; Settings &rarr; Site Files Tracking to begin logging requests.
-            <?php endif; ?>
+            <?php } ?>
         </p>
 
-        <?php if ($saved) : ?>
+        <?php if ($saved) { ?>
             <div class="notice notice-success is-dismissible"><p>Settings saved.</p></div>
-        <?php endif; ?>
+        <?php } ?>
 
-        <?php if ($needs_confirm) : ?>
+        <?php if ($needs_confirm) { ?>
             <div class="notice notice-error">
                 <p>
                     <strong>Warning:</strong> the robots.txt content you submitted contains
@@ -426,18 +434,18 @@ function ptxt_render_settings_page() {
                     Otherwise, edit the content before saving.
                 </p>
             </div>
-        <?php endif; ?>
+        <?php } ?>
 
         <form method="post">
             <?php wp_nonce_field('save_site_txt_files', 'site_txt_files_nonce'); ?>
 
-            <?php if ($robots_applies) : ?>
+            <?php if ($robots_applies) { ?>
                 <h2>robots.txt</h2>
                 <p class="description">
                     Leave blank to fall back to WordPress defaults. A sitemap directive is included in the default content.
                 </p>
 
-                <?php if ($physical_robots) : ?>
+                <?php if ($physical_robots) { ?>
                     <div class="notice notice-warning inline">
                         <p>
                             <strong>A physical <code>robots.txt</code> file exists at the web root.</strong>
@@ -446,7 +454,7 @@ function ptxt_render_settings_page() {
                             authoritative, delete the physical file at <code><?php echo esc_html(ABSPATH); ?>robots.txt</code>.
                         </p>
                     </div>
-                <?php endif; ?>
+                <?php } ?>
 
                 <textarea
                     name="custom_robots_txt"
@@ -455,15 +463,15 @@ function ptxt_render_settings_page() {
                     class="large-text code"
                     spellcheck="false"><?php echo $robots; ?></textarea>
 
-                <?php if ($needs_confirm) : ?>
+                <?php if ($needs_confirm) { ?>
                     <p>
                         <label>
                             <input type="checkbox" name="confirm_disallow_all" value="1">
                             Yes, I intend to block all crawlers on <?php echo esc_html($current_site_url); ?>.
                         </label>
                     </p>
-                <?php endif; ?>
-            <?php else : ?>
+                <?php } ?>
+            <?php } else { ?>
                 <h2>robots.txt</h2>
                 <div class="notice notice-info inline">
                     <p>
@@ -477,7 +485,7 @@ function ptxt_render_settings_page() {
                         any content WordPress produces.
                     </p>
                 </div>
-            <?php endif; ?>
+            <?php } ?>
 
             <h2>llms.txt</h2>
             <p class="description">
@@ -510,7 +518,7 @@ function ptxt_render_settings_page() {
 /**
  * 5. Network-level admin UI: GA4 tracking credentials and multisite sitemap block generator.
  */
-add_action('network_admin_menu', function () {
+add_action('network_admin_menu', function (): void {
     add_submenu_page(
         'settings.php',
         'Site Files Tracking',
@@ -530,8 +538,9 @@ add_action('network_admin_menu', function () {
     );
 });
 
-function ptxt_render_network_tracking_page() {
-    if (!current_user_can('manage_network_options')) {
+function ptxt_render_network_tracking_page(): void
+{
+    if (! current_user_can('manage_network_options')) {
         wp_die('You do not have permission to access this page.');
     }
 
@@ -546,12 +555,12 @@ function ptxt_render_network_tracking_page() {
             : '';
 
         update_site_option('ptxt_ga4_measurement_id', sanitize_text_field($measurement_id));
-        update_site_option('ptxt_ga4_api_secret',     sanitize_text_field($api_secret));
+        update_site_option('ptxt_ga4_api_secret', sanitize_text_field($api_secret));
         $saved = true;
     }
 
     $measurement_id = esc_attr(get_site_option('ptxt_ga4_measurement_id', ''));
-    $api_secret     = esc_attr(get_site_option('ptxt_ga4_api_secret', ''));
+    $api_secret = esc_attr(get_site_option('ptxt_ga4_api_secret', ''));
     ?>
     <div class="wrap">
         <h1>Site Files Tracking</h1>
@@ -572,9 +581,9 @@ function ptxt_render_network_tracking_page() {
             (Admin &rarr; Custom definitions). Realtime reports work without that step.
         </p>
 
-        <?php if ($saved) : ?>
+        <?php if ($saved) { ?>
             <div class="notice notice-success is-dismissible"><p>Tracking settings saved.</p></div>
-        <?php endif; ?>
+        <?php } ?>
 
         <form method="post">
             <?php wp_nonce_field('save_site_txt_tracking', 'site_txt_tracking_nonce'); ?>
@@ -627,8 +636,9 @@ function ptxt_render_network_tracking_page() {
     <?php
 }
 
-function ptxt_render_sitemap_generator_page() {
-    if (!current_user_can('manage_network_options')) {
+function ptxt_render_sitemap_generator_page(): void
+{
+    if (! current_user_can('manage_network_options')) {
         wp_die('You do not have permission to access this page.');
     }
 
@@ -682,9 +692,9 @@ function ptxt_render_sitemap_generator_page() {
         </form>
 
         <h2>Generated block</h2>
-        <?php if ($block === '') : ?>
+        <?php if ($block === '') { ?>
             <p><em>No public subsites found on this network.</em></p>
-        <?php else : ?>
+        <?php } else { ?>
             <textarea
                 readonly
                 rows="<?php echo max(6, substr_count($block, "\n") + 2); ?>"
@@ -693,7 +703,7 @@ function ptxt_render_sitemap_generator_page() {
                 spellcheck="false"
                 onclick="this.select();"><?php echo esc_textarea($block); ?></textarea>
             <p class="description">Click inside the box to select all, then copy.</p>
-        <?php endif; ?>
+        <?php } ?>
     </div>
     <?php
 }

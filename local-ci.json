@@ -54,6 +54,34 @@
       ]
     },
     {
+      "name": "rector",
+      "run": "vendor/bin/rector --dry-run",
+      "paths": [
+        "**/*.php",
+        "!vendor/**",
+        "rector.php"
+      ]
+    },
+    {
+      "name": "phpstan",
+      "run": "composer stan",
+      "paths": [
+        "**/*.php",
+        "!vendor/**",
+        "phpstan.neon.dist",
+        "composer.lock"
+      ]
+    },
+    {
+      "name": "pint",
+      "run": "vendor/bin/pint --test",
+      "paths": [
+        "**/*.php",
+        "!vendor/**",
+        "pint.json"
+      ]
+    },
+    {
       "name": "pest",
       "run": "vendor/bin/pest",
       "paths": [

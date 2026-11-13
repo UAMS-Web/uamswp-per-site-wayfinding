@@ -139,6 +139,21 @@ The plugin is a single file. All logic (filters, rewrite rules, template redirec
 - Physical `robots.txt` detection uses `file_exists(ABSPATH . 'robots.txt')` at page render time; no HTTP calls are made.
 - The sitemap block generator iterates `get_sites(['public' => 1])`, filters by each subsite's `blog_public` option, and sorts child subsites with `sort($lines, SORT_STRING | SORT_FLAG_CASE)` for deterministic output. The root site always sorts to the top regardless of alphabetical position.
 
+## Tests
+
+The unit suite runs on [Pest](https://pestphp.com) 5 with [Brain Monkey](https://brain-wp.github.io/BrainMonkey/) mocking WordPress, so it needs no database and no WordPress checkout. It develops and tests on PHP 8.4 (`config.platform.php` in `composer.json` is `8.4.27`); the Composer packages are development dependencies only.
+
+```bash
+composer install
+vendor/bin/pest
+```
+
+`composer test` runs the same suite. To run it through the shared local CI runner, which also lints the PHP and checks the GitHub download:
+
+```bash
+node .claude/skills/local-ci/local-ci.mjs
+```
+
 ## Version
 
 1.3.1

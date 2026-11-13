@@ -7,6 +7,9 @@
  * Author:      UAMS Web Services
  * Author URI:  https://communications.uams.edu/web/
  * Network:     true
+ * License:     GPL-2.0-or-later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Copyright:   2026 UAMS Web Services
  *
  * Design notes:
  *   - robots.txt is host-scoped per HTTP spec. On subdirectory multisites,

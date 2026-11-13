@@ -177,4 +177,6 @@ Developers:
 
 ## License
 
-Internal UAMS plugin. Contact the UAMS Web team before redistributing.
+Copyright 2026 UAMS Web Services.
+
+This plugin is released under the GNU General Public License, version 2 or later (GPL-2.0-or-later). See [`LICENSE`](LICENSE) for the full text.

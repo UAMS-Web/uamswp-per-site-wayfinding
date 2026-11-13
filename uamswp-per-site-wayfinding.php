@@ -3,7 +3,8 @@
  * Plugin Name: UAMSWP Per-Site robots.txt, llms.txt, llms-full.txt
  * Description: Serves unique robots.txt, llms.txt, and llms-full.txt per multisite subsite. Multisite-type-aware: per-subsite robots.txt editor appears on all subsites of subdomain multisites, but only on the network root site of subdirectory multisites (since HTTP only honors one robots.txt per host). Includes a multisite sitemap-block generator for copy-paste into physical robots.txt files, and optional GA4 Measurement Protocol tracking for llms.txt / llms-full.txt requests.
  * Version:     1.3.2
- * Author:      Brent Passmore and Claude.ai
+ * Author:      UAMS Web Services
+ * Author URI:  https://communications.uams.edu/web/
  * Network:     true
  *
  * Design notes:

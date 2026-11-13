@@ -165,6 +165,15 @@ node .claude/skills/local-ci/local-ci.mjs
 - **1.1.0** Added optional GA4 Measurement Protocol tracking with a network-level settings page. Per-subsite page now displays tracking status.
 - **1.0.0** Initial production build: per-subsite robots.txt, llms.txt, llms-full.txt with Disallow guard.
 
+## Credits
+
+Developed and maintained by UAMS Web Services.
+
+Developers:
+
+- Josh Daugherty
+- Brent Passmore
+
 ## License
 
 Internal UAMS plugin. Contact the UAMS Web team before redistributing.

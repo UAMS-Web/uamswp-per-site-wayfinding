@@ -1,0 +1,6 @@
+{
+    "blacklist": ["vendor/symfony"],
+    "redefinable-internals": [
+        "header"
+    ]
+}

@@ -184,7 +184,7 @@ function ptxt_build_multisite_sitemap_block($sitemap_path = '/sitemaps.xml'): st
 }
 
 /**
- * Fire a GA4 Measurement Protocol event for a wayfinding file request.
+ * Fire a GA4 Measurement Protocol event for one wayfinding file request.
  *
  * Fire-and-forget: short timeout, non-blocking. Silently no-ops when
  * credentials are not configured.

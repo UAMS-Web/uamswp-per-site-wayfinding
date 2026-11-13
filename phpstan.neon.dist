@@ -63,6 +63,19 @@ parameters:
         - uamswp-per-site-wayfinding.php
         - tests
 
+    # tests/Fixtures holds scripts that run in a PHP process of their own and
+    # define global stand-ins for WordPress functions (add_filter() and the
+    # like) with empty bodies. Analyzed, those stand-ins replace the stubs'
+    # signatures for the plugin file, which then reports every add_filter()
+    # call as having no effect.
+    excludePaths:
+        - tests/Fixtures
+
+    # Patchwork declares Patchwork\redefine() in the file it is loaded from, which
+    # the autoloader never reaches, so PHPStan does not find it unless told.
+    scanFiles:
+        - vendor/antecedent/patchwork/Patchwork.php
+
     # The Integration suite's own Composer setup (the tests skill): its vendor/
     # sits inside `tests`, so it is excluded from analysis, under `analyse`
     # only, so its WordPress test classes can still be scanned below. Without
@@ -187,5 +200,22 @@ parameters:
         -
             identifier: method.internalClass
             message: '#of internal class Pest\\#'
+            path: tests
+            reportUnmatched: false
+
+        # Pest binds `$this` inside beforeEach(), afterEach() and test closures to
+        # the test case at runtime, and PHPStan types it as Pest's TestCall, so a
+        # property a test stores on it reads as undefined. The properties are
+        # real: the closure that sets one runs against the same test case.
+        -
+            identifier: property.notFound
+            message: '#Access to an undefined property Pest\\PendingCalls\\TestCall::\$#'
+            path: tests
+            reportUnmatched: false
+        # `->not` after a chained expectation is Pest's own API: Expectation
+        # exposes it through a magic property that its stubs do not declare.
+        -
+            identifier: property.notFound
+            message: '#Access to an undefined property Pest\\Mixins\\Expectation<.*>::\$not\.#'
             path: tests
             reportUnmatched: false

@@ -29,7 +29,8 @@
  *     through server access logs.
  */
 if (! defined('ABSPATH')) {
-    exit;
+    // Ends the process, so only a separate process can reach it (tests/Unit/ProcessExitTest.php).
+    exit; // @codeCoverageIgnore
 }
 
 /**
@@ -276,13 +277,13 @@ add_action('template_redirect', function (): void {
         header('Content-Type: text/plain; charset=utf-8');
         echo get_option('custom_llms_txt', '# llms.txt not yet configured for '.home_url()."\n");
         ptxt_track_request('llms.txt');
-        exit;
+        exit; // @codeCoverageIgnore
     }
     if (get_query_var('llms_full_txt')) {
         header('Content-Type: text/plain; charset=utf-8');
         echo get_option('custom_llms_full_txt', '# llms-full.txt not yet configured for '.home_url()."\n");
         ptxt_track_request('llms-full.txt');
-        exit;
+        exit; // @codeCoverageIgnore
     }
 });
 

@@ -32,6 +32,7 @@
     "scripts": {
         "test": "@test:unit",
         "test:unit": "pest",
+        "mutate": "pest --mutate --path=uamswp-per-site-wayfinding.php",
         "stan": "phpstan analyse --no-progress --memory-limit=2G",
         "refactor": "rector",
         "refactor:sweep": "rector --clear-cache --config=rector-sweep.php",
@@ -43,6 +44,7 @@
     "scripts-descriptions": {
         "test": "Run the test suite.",
         "test:unit": "Run the Pest suite that needs no WordPress and no database.",
+        "mutate": "Run the mutation pass over the plugin file.",
         "stan": "Run PHPStan.",
         "refactor": "Apply the Rector gating profile.",
         "refactor:sweep": "Apply the Rector sweep profile (deliberate, reviewed).",

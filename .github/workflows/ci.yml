@@ -6,8 +6,8 @@ name: CI
 # `checks` job. One definition serves every UAMS-Web repository, so this plugin does not
 # carry a copy that drifts. The call switches on the two jobs only a plugin runs
 # (`floor-lint`, `download-archive`), keeps the chain's defaults of Linux, Windows and macOS
-# legs, and runs the plugin's unit suite as `composer test:unit`. `mutate` is off: mutation
-# testing stays a local measurement for this plugin (UAMS-Web/uamswp-per-site-wayfinding#14).
+# legs, runs mutation testing (the changed part of the plugin file on a pull request, all of it
+# on `workflow_dispatch`), and runs the plugin's unit suite as `composer test:unit`.
 # `phpcs` stays off: this plugin has no PHPCS configuration. The chain's own header lists
 # every input and its default.
 #
@@ -22,7 +22,7 @@ name: CI
 #
 # What the plugin carries for the call, because the called jobs check out this repository:
 # `.github/actions/setup/action.yml`, the synced `.claude/skills` scripts, the Composer
-# scripts `test:pint`, `test:refactor`, `stan` and `test:unit`, and `scripts/lint-floor.php`.
+# scripts `test:pint`, `test:refactor`, `stan`, `test:unit` and `mutate`, and `scripts/lint-floor.php`.
 
 on:
   pull_request:
@@ -46,7 +46,9 @@ jobs:
     # plugin only when the pin moves. To take a newer chain, move the pin to the next tag.
     uses: UAMS-Web/uams-ci-workflows/.github/workflows/ci.yml@v0.10.1
     with:
-      mutate: false
+      # The plugin's only first-party PHP is the file at the repository root, not the chain's
+      # default `src`: a pull request mutates it when it changes it.
+      mutate-paths: uamswp-per-site-wayfinding.php
       floor-lint: true
       floor-lint-php: '8.2'
       download-archive: true

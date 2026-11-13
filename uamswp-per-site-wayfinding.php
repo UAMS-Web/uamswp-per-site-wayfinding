@@ -155,12 +155,14 @@ function ptxt_build_multisite_sitemap_block($sitemap_path = '/sitemaps.xml'): st
     $main_site_id = function_exists('get_main_site_id') ? get_main_site_id() : 1;
 
     foreach ($sites as $site) {
-        switch_to_blog($site->blog_id);
+        // WP_Site::$blog_id is a numeric string; the blog functions take an integer.
+        $blog_id = (int) $site->blog_id;
+        switch_to_blog($blog_id);
         if ((string) get_option('blog_public') === '1') {
-            $home = rtrim(get_home_url($site->blog_id), '/');
+            $home = rtrim(get_home_url($blog_id), '/');
             $line = "Sitemap: {$home}{$sitemap_path}";
 
-            if ((int) $site->blog_id === (int) $main_site_id) {
+            if ($blog_id === (int) $main_site_id) {
                 $root_line = $line;
             } else {
                 $child_lines[] = $line;

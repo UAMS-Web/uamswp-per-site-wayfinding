@@ -156,10 +156,11 @@ node .claude/skills/local-ci/local-ci.mjs
 
 ## Version
 
-1.3.1
+1.3.2
 
 ### Changelog
 
+- **1.3.2** Guarded the `redirect_canonical` filter against a request with no path, so it returns WordPress's redirect unchanged. The plugin header's name changed to "UAMSWP Per-Site robots.txt, llms.txt, llms-full.txt".
 - **1.3.1** Sitemap Block Generator now sorts output: network root site first, then child subsites alphabetically by URL (case-insensitive).
 - **1.3.0** Added multisite-type awareness (robots.txt editor shows on subdomain subsites and subdirectory root only). Added physical-`robots.txt` detection with shadow warning. Added Sitemap Block Generator at network admin. Added `register_activation_hook` to flush rewrites automatically. Narrowed GA4 tracking to `llms.txt` and `llms-full.txt` only; `robots.txt` tracking removed because physical files bypass WordPress.
 - **1.1.0** Added optional GA4 Measurement Protocol tracking with a network-level settings page. Per-subsite page now displays tracking status.

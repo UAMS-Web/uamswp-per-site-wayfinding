@@ -48,7 +48,7 @@ final class Network
 
         foreach ($sites as $blogId => [$public, $home]) {
             if ((string) $public === '1') {
-                expect('get_home_url')->once()->with((string) $blogId)->andReturn($home);
+                expect('get_home_url')->once()->with($blogId)->andReturn($home);
             }
         }
     }

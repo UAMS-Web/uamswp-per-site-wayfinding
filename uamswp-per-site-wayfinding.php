@@ -36,7 +36,7 @@ if (!defined('ABSPATH')) {
 /**
  * Default robots.txt content for a newly configured site.
  */
-function ptxt_default_robots() {
+function ptxt_default_robots(): string {
     return "User-agent: *\nAllow: /\n\nSitemap: " . home_url('/sitemap.xml') . "\n";
 }
 
@@ -65,10 +65,8 @@ function ptxt_robots_editor_applies() {
  * When true, the web server serves that file in preference to any virtual
  * content WordPress produces. The plugin's robots.txt editor on the root
  * site is effectively shadowed until the physical file is removed.
- *
- * @return bool
  */
-function ptxt_physical_robots_exists() {
+function ptxt_physical_robots_exists(): bool {
     return defined('ABSPATH') && file_exists(ABSPATH . 'robots.txt');
 }
 
@@ -80,7 +78,7 @@ function ptxt_physical_robots_exists() {
  * at specific bots (SemrushBot, AhrefsBot, etc.) do not trigger the guard.
  * Only a blanket block of all crawlers does.
  */
-function ptxt_wildcard_disallows_root($content) {
+function ptxt_wildcard_disallows_root($content): bool {
     if (!is_string($content) || $content === '') {
         return false;
     }
@@ -124,9 +122,8 @@ function ptxt_wildcard_disallows_root($content) {
  * output and paste it into the physical robots.txt for the host.
  *
  * @param string $sitemap_path Path appended to each subsite's home URL. Default '/sitemaps.xml'.
- * @return string
  */
-function ptxt_build_multisite_sitemap_block($sitemap_path = '/sitemaps.xml') {
+function ptxt_build_multisite_sitemap_block($sitemap_path = '/sitemaps.xml'): string {
     if (!function_exists('get_sites') || !is_multisite()) {
         return '';
     }
@@ -189,7 +186,7 @@ function ptxt_build_multisite_sitemap_block($sitemap_path = '/sitemaps.xml') {
  *                          tracked because physical robots.txt requests bypass
  *                          WordPress entirely.
  */
-function ptxt_track_request($file_name) {
+function ptxt_track_request($file_name): void {
     $measurement_id = get_site_option('ptxt_ga4_measurement_id', '');
     $api_secret     = get_site_option('ptxt_ga4_api_secret', '');
 
@@ -254,7 +251,7 @@ add_filter('robots_txt', function ($output, $public) {
 /**
  * 2. Register virtual routes for llms.txt and llms-full.txt.
  */
-add_action('init', function () {
+add_action('init', function (): void {
     add_rewrite_rule('^llms\.txt$',      'index.php?llms_txt=1',      'top');
     add_rewrite_rule('^llms-full\.txt$', 'index.php?llms_full_txt=1', 'top');
 });
@@ -265,7 +262,7 @@ add_filter('query_vars', function ($vars) {
     return $vars;
 });
 
-add_action('template_redirect', function () {
+add_action('template_redirect', function (): void {
     if (get_query_var('llms_txt')) {
         header('Content-Type: text/plain; charset=utf-8');
         echo get_option('custom_llms_txt', "# llms.txt not yet configured for " . home_url() . "\n");
@@ -297,7 +294,7 @@ add_filter('redirect_canonical', function ($redirect_url, $requested_url) {
     $home_path = parse_url(home_url('/'), PHP_URL_PATH);
     if (is_string($home_path) && $home_path !== '/' && $home_path !== '') {
         $home_path = '/' . trim($home_path, '/') . '/';
-        if (strpos($path, $home_path) === 0) {
+        if (str_starts_with($path, $home_path)) {
             $path = '/' . substr($path, strlen($home_path));
         }
     }
@@ -316,7 +313,7 @@ add_filter('redirect_canonical', function ($redirect_url, $requested_url) {
  * activated. On Network Activation, WordPress fires it once per subsite
  * during activation, which is what we want.
  */
-register_activation_hook(__FILE__, function () {
+register_activation_hook(__FILE__, function (): void {
     add_rewrite_rule('^llms\.txt$',      'index.php?llms_txt=1',      'top');
     add_rewrite_rule('^llms-full\.txt$', 'index.php?llms_full_txt=1', 'top');
     flush_rewrite_rules(false);
@@ -325,7 +322,7 @@ register_activation_hook(__FILE__, function () {
 /**
  * 4. Per-site admin UI under Settings, super-admin only, with a Disallow: / confirmation guard.
  */
-add_action('admin_menu', function () {
+add_action('admin_menu', function (): void {
     if (!is_super_admin()) {
         return;
     }
@@ -339,7 +336,7 @@ add_action('admin_menu', function () {
     );
 });
 
-function ptxt_render_settings_page() {
+function ptxt_render_settings_page(): void {
     if (!is_super_admin()) {
         wp_die('You do not have permission to access this page.');
     }
@@ -510,7 +507,7 @@ function ptxt_render_settings_page() {
 /**
  * 5. Network-level admin UI: GA4 tracking credentials and multisite sitemap block generator.
  */
-add_action('network_admin_menu', function () {
+add_action('network_admin_menu', function (): void {
     add_submenu_page(
         'settings.php',
         'Site Files Tracking',
@@ -530,7 +527,7 @@ add_action('network_admin_menu', function () {
     );
 });
 
-function ptxt_render_network_tracking_page() {
+function ptxt_render_network_tracking_page(): void {
     if (!current_user_can('manage_network_options')) {
         wp_die('You do not have permission to access this page.');
     }
@@ -627,7 +624,7 @@ function ptxt_render_network_tracking_page() {
     <?php
 }
 
-function ptxt_render_sitemap_generator_page() {
+function ptxt_render_sitemap_generator_page(): void {
     if (!current_user_can('manage_network_options')) {
         wp_die('You do not have permission to access this page.');
     }

@@ -16,13 +16,20 @@ final class ExitProbe
      */
     public static function run(string $scenario): array
     {
-        $command = escapeshellarg(PHP_BINARY).' '.escapeshellarg(__DIR__.'/../Fixtures/exit-probe.php').' '.escapeshellarg($scenario);
-        $raw = (string) shell_exec($command.' 2>&1; printf "\\nstatus=%s" "$?"');
-        $position = (int) strrpos($raw, "\nstatus=");
+        // An argument array starts the process without a shell, so the same call works on Windows.
+        $process = proc_open(
+            [PHP_BINARY, __DIR__.'/../Fixtures/exit-probe.php', $scenario],
+            [1 => ['pipe', 'w'], 2 => ['redirect', 1]],
+            $pipes,
+        );
 
-        return [
-            'output' => substr($raw, 0, $position),
-            'status' => (int) substr($raw, $position + strlen("\nstatus=")),
-        ];
+        if (! is_resource($process)) {
+            return ['output' => 'could not start PHP', 'status' => -1];
+        }
+
+        $output = (string) stream_get_contents($pipes[1]);
+        fclose($pipes[1]);
+
+        return ['output' => $output, 'status' => proc_close($process)];
     }
 }

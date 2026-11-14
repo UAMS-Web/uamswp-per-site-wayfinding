@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 use Brain\Monkey\Functions;
 use Tests\Support\Admin;
+use Tests\Support\OptionStore;
 use Tests\Support\Render;
 
 use function Brain\Monkey\Functions\when;
@@ -22,11 +23,7 @@ beforeEach(function (): void {
     $this->post = $_POST;
     $_POST = [];
 
-    $this->stored = [];
-    $this->storedSite = [];
-    $this->optionReads = [];
-    $this->siteOptionReads = [];
-    $this->updates = [];
+    OptionStore::install();
 
     Admin::stubOutput();
     when('is_super_admin')->justReturn(true);
@@ -34,19 +31,6 @@ beforeEach(function (): void {
     when('home_url')->justReturn('https://site.test');
     when('admin_url')->alias(fn (string $path): string => 'https://site.test/wp-admin/'.$path);
     when('wp_verify_nonce')->alias(fn ($nonce, string $action): bool => $nonce === 'good' && $action === 'save_site_txt_files');
-    when('get_option')->alias(function (string $name, $default = false) {
-        $this->optionReads[] = [$name, $default];
-
-        return array_key_exists($name, $this->stored) ? $this->stored[$name] : $default;
-    });
-    when('get_site_option')->alias(function (string $name, $default = false) {
-        $this->siteOptionReads[] = [$name, $default];
-
-        return array_key_exists($name, $this->storedSite) ? $this->storedSite[$name] : $default;
-    });
-    when('update_option')->alias(function (string $name, $value): void {
-        $this->updates[] = [$name, $value];
-    });
 });
 
 afterEach(function (): void {
@@ -61,7 +45,7 @@ it('refuses anyone but a super admin and says why', function (): void {
 });
 
 it('shows the saved content, the site address and the form for a request that saves nothing', function (): void {
-    $this->stored = [
+    OptionStore::$options = [
         'custom_robots_txt' => 'saved robots',
         'custom_llms_txt' => 'saved llms',
         'custom_llms_full_txt' => 'saved full',
@@ -83,7 +67,7 @@ it('shows the saved content, the site address and the form for a request that sa
         ->not->toContain('Settings saved.')
         ->not->toContain('Warning:')
         ->not->toContain('confirm_disallow_all')
-        ->and($this->updates)->toBe([]);
+        ->and(OptionStore::$updates)->toBe([]);
 });
 
 it('starts the robots.txt editor from the default content, and the other two empty', function (): void {
@@ -92,7 +76,7 @@ it('starts the robots.txt editor from the default content, and the other two emp
 
     $html = Render::capture('ptxt_render_settings_page');
 
-    expect($this->optionReads)->toBe([
+    expect(OptionStore::$reads)->toBe([
         ['custom_robots_txt', $default],
         ['custom_llms_txt', ''],
         ['custom_llms_full_txt', ''],
@@ -109,7 +93,7 @@ it('saves all three files, unslashed, and says so', function (): void {
 
     $html = Render::capture('ptxt_render_settings_page');
 
-    expect($this->updates)->toBe([
+    expect(OptionStore::$updates)->toBe([
         ['custom_robots_txt', 'User-agent: *\\nAllow: /'],
         ['custom_llms_txt', "it's llms"],
         ['custom_llms_full_txt', 'full'],
@@ -121,7 +105,7 @@ it('saves empty content when a field is missing from the post', function (): voi
 
     Render::capture('ptxt_render_settings_page');
 
-    expect($this->updates)->toBe([
+    expect(OptionStore::$updates)->toBe([
         ['custom_robots_txt', ''],
         ['custom_llms_txt', ''],
         ['custom_llms_full_txt', ''],
@@ -132,7 +116,7 @@ it('saves nothing when the nonce does not verify', function (): void {
     $_POST = ['site_txt_files_nonce' => 'bad', 'custom_robots_txt' => 'x'];
 
     expect(Render::capture('ptxt_render_settings_page'))->not->toContain('Settings saved.')
-        ->and($this->updates)->toBe([]);
+        ->and(OptionStore::$updates)->toBe([]);
 });
 
 it('saves nothing when there is no nonce', function (): void {
@@ -140,7 +124,7 @@ it('saves nothing when there is no nonce', function (): void {
     Functions\expect('wp_verify_nonce')->never();
 
     expect(Render::capture('ptxt_render_settings_page'))->not->toContain('Settings saved.')
-        ->and($this->updates)->toBe([]);
+        ->and(OptionStore::$updates)->toBe([]);
 });
 
 it('holds back a robots.txt that blocks every crawler until it is confirmed', function (): void {
@@ -162,8 +146,8 @@ it('holds back a robots.txt that blocks every crawler until it is confirmed', fu
         ->toContain('name="confirm_disallow_all" value="1"')
         ->toContain('Yes, I intend to block all crawlers on [html:https://site.test].')
         ->not->toContain('Settings saved.')
-        ->and($this->updates)->toBe([])
-        ->and($this->optionReads)->toBe([]);
+        ->and(OptionStore::$updates)->toBe([])
+        ->and(OptionStore::$reads)->toBe([]);
 });
 
 it('saves a robots.txt that blocks every crawler once it is confirmed', function (): void {
@@ -175,7 +159,7 @@ it('saves a robots.txt that blocks every crawler once it is confirmed', function
 
     $html = Render::capture('ptxt_render_settings_page');
 
-    expect($this->updates)->toBe([
+    expect(OptionStore::$updates)->toBe([
         ['custom_robots_txt', "User-agent: *\nDisallow: /"],
         ['custom_llms_txt', ''],
         ['custom_llms_full_txt', ''],
@@ -191,7 +175,7 @@ it('does not treat an empty confirmation as confirmed', function (): void {
     ];
 
     expect(Render::capture('ptxt_render_settings_page'))->toContain('<strong>Warning:</strong>')
-        ->and($this->updates)->toBe([]);
+        ->and(OptionStore::$updates)->toBe([]);
 });
 
 it('points to the editor on the network root, and shows none, on a child site of a subdirectory network', function (): void {
@@ -217,7 +201,7 @@ it('saves the two llms files and never the robots.txt on a child site, even one 
 
     $html = Render::capture('ptxt_render_settings_page');
 
-    expect($this->updates)->toBe([
+    expect(OptionStore::$updates)->toBe([
         ['custom_llms_txt', 'a'],
         ['custom_llms_full_txt', 'b'],
     ])->and($html)->toContain('Settings saved.')
@@ -272,7 +256,7 @@ it('shows no physical robots.txt warning on a site without the editor, whatever 
 });
 
 it('reports GA4 tracking as enabled only with both an id and a secret', function (string $id, string $secret, bool $enabled): void {
-    $this->storedSite = ['ptxt_ga4_measurement_id' => $id, 'ptxt_ga4_api_secret' => $secret];
+    OptionStore::$siteOptions = ['ptxt_ga4_measurement_id' => $id, 'ptxt_ga4_api_secret' => $secret];
 
     $html = Render::capture('ptxt_render_settings_page');
 
@@ -291,7 +275,7 @@ it('reports GA4 tracking as enabled only with both an id and a secret', function
 it('reads the tracking credentials from the network options, defaulting to empty', function (): void {
     Render::capture('ptxt_render_settings_page');
 
-    expect($this->siteOptionReads)->toBe([
+    expect(OptionStore::$siteReads)->toBe([
         ['ptxt_ga4_measurement_id', ''],
         ['ptxt_ga4_api_secret', ''],
     ]);

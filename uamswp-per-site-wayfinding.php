@@ -98,7 +98,9 @@ function ptxt_wildcard_disallows_root($content): bool
     $wildcard_allow_root = false;
 
     foreach ($lines as $line) {
-        $line = trim(preg_replace('/#.*$/', '', $line));
+        // Drop a comment; strpos() cannot fail the way preg_replace() can, which returns null on error.
+        $comment_start = strpos($line, '#');
+        $line = trim($comment_start === false ? $line : substr($line, 0, $comment_start));
         if ($line === '') {
             continue;
         }

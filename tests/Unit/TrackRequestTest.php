@@ -73,6 +73,16 @@ it('posts one non-blocking event with the request details', function (): void {
     ]);
 });
 
+it('sends nothing when the payload cannot be encoded', function (): void {
+    $sent = Tracking::capture();
+    when('wp_json_encode')->justReturn(false);
+
+    ptxt_track_request('llms.txt');
+
+    expect($sent->endpoint)->toBeNull()
+        ->and($sent->args)->toBeNull();
+});
+
 it('falls back to an unknown agent and a zero address when the request carries neither', function (): void {
     $sent = Tracking::capture();
 

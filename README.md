@@ -148,11 +148,7 @@ composer install
 vendor/bin/pest
 ```
 
-`composer test` runs the same suite. To run it through the shared local CI runner, which also lints the PHP and checks the GitHub download:
-
-```bash
-node .claude/skills/local-ci/local-ci.mjs
-```
+`composer test` runs the same suite. Remote CI is the gate: on every pull request it lints the PHP, runs Pest, PHPStan, Rector and Pint, and checks that the GitHub download holds only the plugin.
 
 ## Version
 

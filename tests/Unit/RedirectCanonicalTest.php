@@ -8,7 +8,10 @@
 
 declare(strict_types=1);
 
+use Tests\Support\PluginHooks;
 use Tests\Support\RedirectCanonical;
+
+use function Brain\Monkey\Functions\when;
 
 it('stops the redirect for the two files on a root site', function (string $path): void {
     expect(RedirectCanonical::run('https://example.test'.$path))->toBeFalse();
@@ -38,6 +41,18 @@ it('lets the redirect through when the requested URL cannot be parsed', function
     // parse_url() returns false, not null, for this one.
     expect(RedirectCanonical::run('http:///'))->toBe('https://example.test/redirected/');
 });
+
+it('lets the redirect through when the requested URL is not text', function (mixed $requested): void {
+    when('home_url')->justReturn('https://example.test/');
+
+    $result = PluginHooks::callback('filter', 'redirect_canonical')('https://example.test/redirected/', $requested);
+
+    expect($result)->toBe('https://example.test/redirected/');
+})->with([
+    'false' => [false],
+    'null' => [null],
+    'an array' => [['/llms.txt']],
+]);
 
 it('strips the subsite folder before matching on a subdirectory network', function (string $home): void {
     expect(RedirectCanonical::run('https://example.test/pharmacy/llms.txt', $home))->toBeFalse()

@@ -14,11 +14,11 @@ final class Tracking
     /**
      * Stub the options and the helpers a send needs, and capture the request.
      */
-    public static function capture(string $id = 'G-TEST', string $secret = 'topsecret'): \stdClass
+    public static function capture(string $id = 'G-TEST', string $secret = 'topsecret'): SentRequest
     {
-        $sent = (object) ['endpoint' => null, 'args' => null];
+        $sent = new SentRequest;
 
-        when('get_site_option')->alias(fn (string $name, $default = false) => match ($name) {
+        when('get_site_option')->alias(fn (string $name, mixed $default = false): mixed => match ($name) {
             'ptxt_ga4_measurement_id' => $id,
             'ptxt_ga4_api_secret' => $secret,
             default => $default,

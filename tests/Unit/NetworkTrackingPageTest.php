@@ -60,13 +60,13 @@ it('shows the saved credentials escaped in the form, and no saved notice', funct
         ->toContain('value="[attr:G-1]"')
         ->toContain('value="[attr:sec]"')
         ->toContain('<nonce:save_site_txt_tracking:site_txt_tracking_nonce>')
-        ->toContain('<submit:Save Tracking Settings>')
-        ->not->toContain('Tracking settings saved.')
-        ->and(OptionStore::$siteReads)->toBe([
-            ['ptxt_ga4_measurement_id', ''],
-            ['ptxt_ga4_api_secret', ''],
-        ])
-        ->and(OptionStore::$siteUpdates)->toBe([]);
+        ->toContain('<submit:Save Tracking Settings>');
+    expect($html)->not->toContain('Tracking settings saved.');
+    expect(OptionStore::$siteReads)->toBe([
+        ['ptxt_ga4_measurement_id', ''],
+        ['ptxt_ga4_api_secret', ''],
+    ]);
+    expect(OptionStore::$siteUpdates)->toBe([]);
 });
 
 it('saves both credentials, unslashed, trimmed and sanitized, and says so', function (): void {

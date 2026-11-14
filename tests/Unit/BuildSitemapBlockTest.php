@@ -31,7 +31,7 @@ it('returns an empty block when WordPress cannot list sites, and finds the main 
     when('get_sites')->justReturn([(object) ['blog_id' => '1'], (object) ['blog_id' => '2']]);
     when('switch_to_blog')->justReturn();
     when('get_option')->justReturn('1');
-    when('get_home_url')->alias(fn ($id): string => 'https://site'.$id.'.test/');
+    when('get_home_url')->alias(fn (int|string $id): string => 'https://site'.$id.'.test/');
     when('restore_current_blog')->justReturn();
 
     expect(ptxt_build_multisite_sitemap_block('/map.xml'))

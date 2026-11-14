@@ -43,8 +43,8 @@ it('says so when the network has no public subsites', function (): void {
         ->toContain('<h1>Sitemap Block Generator</h1>')
         ->toContain('<p><em>No public subsites found on this network.</em></p>')
         ->toContain('value="[attr:/sitemaps.xml]"')
-        ->toContain('name="page" value="site-txt-files-sitemaps"')
-        ->not->toContain('<textarea');
+        ->toContain('name="page" value="site-txt-files-sitemaps"');
+    expect($html)->not->toContain('<textarea');
 });
 
 it('shows the generated block for the default path in a read-only box', function (): void {
@@ -56,8 +56,8 @@ it('shows the generated block for the default path in a read-only box', function
         ->toContain("# Sitemaps\nSitemap: https://root.test/sitemaps.xml\nSitemap: https://root.test/b/sitemaps.xml")
         ->toContain('rows="6"')
         ->toContain('<textarea')
-        ->toContain('readonly')
-        ->not->toContain('No public subsites found');
+        ->toContain('readonly');
+    expect($html)->not->toContain('No public subsites found');
 });
 
 it('grows the box with the block, two rows past the line breaks', function (): void {

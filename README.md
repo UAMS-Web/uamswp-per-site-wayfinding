@@ -156,10 +156,11 @@ node .claude/skills/local-ci/local-ci.mjs
 
 ## Version
 
-1.3.2
+1.3.3
 
 ### Changelog
 
+- **1.3.3** No change to what the plugin does. The `query_vars` filter is typed, and the `redirect_canonical` filter reads its requested URL as text, so a non-text value is passed through unchanged. The GitHub download now holds only the plugin file and its license. The code is under PHPStan level 10, Rector, Pint and a full Pest suite with 100% mutation score, run by CI.
 - **1.3.2** Guarded the `redirect_canonical` filter against a request with no path, so it returns WordPress's redirect unchanged. The plugin header's name changed to "UAMSWP Per-Site robots.txt, llms.txt, llms-full.txt".
 - **1.3.1** Sitemap Block Generator now sorts output: network root site first, then child subsites alphabetically by URL (case-insensitive).
 - **1.3.0** Added multisite-type awareness (robots.txt editor shows on subdomain subsites and subdirectory root only). Added physical-`robots.txt` detection with shadow warning. Added Sitemap Block Generator at network admin. Added `register_activation_hook` to flush rewrites automatically. Narrowed GA4 tracking to `llms.txt` and `llms-full.txt` only; `robots.txt` tracking removed because physical files bypass WordPress.

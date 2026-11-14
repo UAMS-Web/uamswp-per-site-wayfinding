@@ -120,3 +120,22 @@ it('shows the credentials it has just saved', function (): void {
 
     expect($html)->toContain('value="[attr:[clean:G-9]]"')->toContain('value="[attr:[clean:k]]"');
 });
+
+it('reads a credential posted as something other than text as empty', function (): void {
+    $_POST = ['site_txt_tracking_nonce' => 'good', 'ptxt_ga4_measurement_id' => ['G-1'], 'ptxt_ga4_api_secret' => 's'];
+
+    Render::capture('ptxt_render_network_tracking_page');
+
+    expect(OptionStore::$siteUpdates)->toBe([
+        ['ptxt_ga4_measurement_id', '[clean:]'],
+        ['ptxt_ga4_api_secret', '[clean:s]'],
+    ]);
+});
+
+it('saves nothing when the nonce is posted as something other than text', function (): void {
+    $_POST = ['site_txt_tracking_nonce' => ['good'], 'ptxt_ga4_measurement_id' => 'G-1'];
+
+    Render::capture('ptxt_render_network_tracking_page');
+
+    expect(OptionStore::$siteUpdates)->toBe([]);
+});

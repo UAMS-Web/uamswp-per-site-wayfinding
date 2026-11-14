@@ -34,6 +34,11 @@ it('lets the redirect through when the request has no path', function (string $r
     'empty' => [''],
 ]);
 
+it('lets the redirect through when the requested URL cannot be parsed', function (): void {
+    // parse_url() returns false, not null, for this one.
+    expect(RedirectCanonical::run('http:///'))->toBe('https://example.test/redirected/');
+});
+
 it('strips the subsite folder before matching on a subdirectory network', function (string $home): void {
     expect(RedirectCanonical::run('https://example.test/pharmacy/llms.txt', $home))->toBeFalse()
         ->and(RedirectCanonical::run('https://example.test/pharmacy/llms-full.txt', $home))->toBeFalse();

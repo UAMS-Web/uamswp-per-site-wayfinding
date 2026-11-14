@@ -90,7 +90,8 @@ function ptxt_wildcard_disallows_root($content): bool
         return false;
     }
 
-    $lines = preg_split('/\r\n|\r|\n/', $content);
+    // Split on CRLF, CR or LF; explode() always returns a list, where preg_split() can return false.
+    $lines = explode("\n", str_replace(["\r\n", "\r"], "\n", $content));
 
     $in_wildcard_group = false;
     $wildcard_disallow_root = false;
@@ -236,11 +237,17 @@ function ptxt_track_request($file_name): void
         'https://www.google-analytics.com/mp/collect'
     );
 
+    // wp_json_encode() returns false when the payload cannot be encoded; send nothing then.
+    $body = wp_json_encode($payload);
+    if ($body === false) {
+        return;
+    }
+
     wp_remote_post($endpoint, [
         'timeout' => 1,
         'blocking' => false,
         'headers' => ['Content-Type' => 'application/json'],
-        'body' => wp_json_encode($payload),
+        'body' => $body,
     ]);
 }
 
@@ -297,7 +304,8 @@ add_action('template_redirect', function (): void {
  */
 add_filter('redirect_canonical', function ($redirect_url, $requested_url) {
     $path = parse_url($requested_url, PHP_URL_PATH);
-    if ($path === null || $path === '') {
+    // parse_url() returns false for a malformed URL and null for one with no path.
+    if (! is_string($path) || $path === '') {
         return $redirect_url;
     }
 

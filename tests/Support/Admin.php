@@ -17,12 +17,12 @@ final class Admin
 {
     public static function stubOutput(): void
     {
-        when('esc_html')->alias(fn ($value): string => '[html:'.$value.']');
-        when('esc_attr')->alias(fn ($value): string => '[attr:'.$value.']');
-        when('esc_textarea')->alias(fn ($value): string => '[textarea:'.$value.']');
-        when('esc_url')->alias(fn ($value): string => '[url:'.$value.']');
-        when('wp_unslash')->alias(fn ($value): string => stripslashes((string) $value));
-        when('sanitize_text_field')->alias(fn ($value): string => '[clean:'.$value.']');
+        when('esc_html')->alias(fn (string $value): string => '[html:'.$value.']');
+        when('esc_attr')->alias(fn (string $value): string => '[attr:'.$value.']');
+        when('esc_textarea')->alias(fn (string $value): string => '[textarea:'.$value.']');
+        when('esc_url')->alias(fn (string $value): string => '[url:'.$value.']');
+        when('wp_unslash')->alias(fn (string $value): string => stripslashes($value));
+        when('sanitize_text_field')->alias(fn (string $value): string => '[clean:'.$value.']');
         when('wp_nonce_field')->alias(function (string $action, string $name): void {
             echo '<nonce:'.$action.':'.$name.'>';
         });

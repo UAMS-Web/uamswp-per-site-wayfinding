@@ -37,7 +37,7 @@ final class PluginHooks
             return;
         }
 
-        redefine('add_filter', function (string $hook, $callback, int $priority = 10, int $accepted = 1): bool {
+        redefine('add_filter', function (string $hook, callable $callback, int $priority = 10, int $accepted = 1): bool {
             self::$registered[] = [
                 'type' => 'filter',
                 'hook' => $hook,
@@ -48,7 +48,7 @@ final class PluginHooks
 
             return true;
         });
-        redefine('add_action', function (string $hook, $callback, int $priority = 10, int $accepted = 1): bool {
+        redefine('add_action', function (string $hook, callable $callback, int $priority = 10, int $accepted = 1): bool {
             self::$registered[] = [
                 'type' => 'action',
                 'hook' => $hook,
@@ -61,7 +61,7 @@ final class PluginHooks
         });
         // WordPress core defines this one and Brain Monkey does not, so there is
         // nothing for Patchwork to redefine: Brain Monkey creates it.
-        when('register_activation_hook')->alias(function (string $file, $callback): void {
+        when('register_activation_hook')->alias(function (string $file, callable $callback): void {
             self::$activation[] = ['file' => $file, 'callback' => $callback];
         });
 

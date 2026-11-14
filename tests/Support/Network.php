@@ -36,7 +36,7 @@ final class Network
         expect('get_sites')->once()->with(['public' => 1, 'number' => 500])->andReturn($objects);
 
         $current = 0;
-        expect('switch_to_blog')->times(count($sites))->andReturnUsing(function ($id) use (&$current): void {
+        expect('switch_to_blog')->times(count($sites))->andReturnUsing(function (int|string $id) use (&$current): void {
             $current = (int) $id;
         });
         expect('get_option')->times(count($sites))->with('blog_public', '')->andReturnUsing(

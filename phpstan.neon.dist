@@ -53,7 +53,7 @@ parameters:
     # from 0 upward (see the code-quality skill), then raise it by one per
     # change as findings are fixed, until `max`. Lowering it is a deliberate,
     # argued change, not a quiet edit to get a red run green.
-    level: 9
+    level: 10
 
     # The directories and files holding first-party PHP, including
     # the plugin header file at the root. Include tests: test bugs are real
@@ -219,3 +219,12 @@ parameters:
             message: '#Access to an undefined property Pest\\Mixins\\Expectation<.*>::\$not\.#'
             path: tests
             reportUnmatched: false
+        # The afterEach() hook in tests/Pest.php counts Mockery's expectations as
+        # assertions through `$this`, which Pest binds to the running test case.
+        # PHPStan cannot type that binding, so the call reads as on `mixed`. The
+        # entry names the one file and the one method, so it cannot hide another.
+        -
+            identifier: method.nonObject
+            message: '#Cannot call method addToAssertionCount\(\) on mixed\.#'
+            path: tests/Pest.php
+            count: 1

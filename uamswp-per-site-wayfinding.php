@@ -317,7 +317,7 @@ add_action('init', function (): void {
     add_rewrite_rule('^llms-full\.txt$', 'index.php?llms_full_txt=1', 'top');
 });
 
-add_filter('query_vars', function ($vars) {
+add_filter('query_vars', function (array $vars): array {
     $vars[] = 'llms_txt';
     $vars[] = 'llms_full_txt';
 
@@ -344,7 +344,7 @@ add_action('template_redirect', function (): void {
  * /llms.txt and /llms-full.txt.
  */
 add_filter('redirect_canonical', function ($redirect_url, $requested_url) {
-    $path = parse_url($requested_url, PHP_URL_PATH);
+    $path = parse_url(ptxt_scalar_string($requested_url, ''), PHP_URL_PATH);
     // parse_url() returns false for a malformed URL and null for one with no path.
     if (! is_string($path) || $path === '') {
         return $redirect_url;

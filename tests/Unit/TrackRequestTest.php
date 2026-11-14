@@ -54,11 +54,11 @@ it('posts one non-blocking event with the request details', function (): void {
 
     expect($sent->endpoint)->toBe('https://www.google-analytics.com/mp/collect?measurement_id=G-TEST&api_secret=topsecret')
         ->and($sent->args)->toHaveKeys(['timeout', 'blocking', 'headers', 'body'])
-        ->and($sent->args['timeout'])->toBe(1)
-        ->and($sent->args['blocking'])->toBeFalse()
-        ->and($sent->args['headers'])->toBe(['Content-Type' => 'application/json']);
+        ->and($sent->arg('timeout'))->toBe(1)
+        ->and($sent->arg('blocking'))->toBeFalse()
+        ->and($sent->arg('headers'))->toBe(['Content-Type' => 'application/json']);
 
-    expect(json_decode($sent->args['body'], true))->toBe([
+    expect(json_decode($sent->body(), true))->toBe([
         'client_id' => 'bot.'.substr(md5('GPTBot/1.0'), 0, 16),
         'events' => [[
             'name' => 'wayfinding_request',
@@ -88,7 +88,7 @@ it('falls back to an unknown agent and a zero address when the request carries n
 
     ptxt_track_request('llms.txt');
 
-    expect(json_decode($sent->args['body'], true))
+    expect(json_decode($sent->body(), true))
         ->toHaveKey('client_id', 'bot.'.substr(md5('unknown'), 0, 16))
         ->toHaveKey('events.0.params.user_agent', 'unknown')
         ->toHaveKey('events.0.params.requester_ip', '0.0.0.0');
@@ -100,7 +100,7 @@ it('keeps at most the first 500 characters of the user agent', function (): void
 
     ptxt_track_request('llms.txt');
 
-    expect(json_decode($sent->args['body'], true))
+    expect(json_decode($sent->body(), true))
         ->toHaveKey('events.0.params.user_agent', str_repeat('a', 499).'b')
         ->toHaveKey('client_id', 'bot.'.substr(md5(str_repeat('a', 499).'b'), 0, 16));
 });
@@ -112,7 +112,7 @@ it('reads the user agent and address as strings', function (): void {
 
     ptxt_track_request('llms.txt');
 
-    expect(json_decode($sent->args['body'], true))
+    expect(json_decode($sent->body(), true))
         ->toHaveKey('events.0.params.user_agent', '12345')
         ->toHaveKey('events.0.params.requester_ip', '42');
 });
@@ -124,7 +124,7 @@ it('reads a user agent or address that is not a scalar as unknown', function ():
 
     ptxt_track_request('llms.txt');
 
-    expect(json_decode($sent->args['body'], true))
+    expect(json_decode($sent->body(), true))
         ->toHaveKey('events.0.params.user_agent', 'unknown')
         ->toHaveKey('events.0.params.requester_ip', '0.0.0.0');
 });

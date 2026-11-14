@@ -63,11 +63,11 @@ it('shows the saved content, the site address and the form for a request that sa
         ->toContain('name="custom_robots_txt"')
         ->toContain('>[textarea:saved robots]</textarea>')
         ->toContain('>[textarea:saved llms]</textarea>')
-        ->toContain('>[textarea:saved full]</textarea>')
-        ->not->toContain('Settings saved.')
-        ->not->toContain('Warning:')
-        ->not->toContain('confirm_disallow_all')
-        ->and(OptionStore::$updates)->toBe([]);
+        ->toContain('>[textarea:saved full]</textarea>');
+    expect($html)->not->toContain('Settings saved.');
+    expect($html)->not->toContain('Warning:');
+    expect($html)->not->toContain('confirm_disallow_all');
+    expect(OptionStore::$updates)->toBe([]);
 });
 
 it('starts the robots.txt editor from the default content, and the other two empty', function (): void {
@@ -144,10 +144,10 @@ it('holds back a robots.txt that blocks every crawler until it is confirmed', fu
         ->toContain('>[textarea:my llms]</textarea>')
         ->toContain('>[textarea:my full]</textarea>')
         ->toContain('name="confirm_disallow_all" value="1"')
-        ->toContain('Yes, I intend to block all crawlers on [html:https://site.test].')
-        ->not->toContain('Settings saved.')
-        ->and(OptionStore::$updates)->toBe([])
-        ->and(OptionStore::$reads)->toBe([]);
+        ->toContain('Yes, I intend to block all crawlers on [html:https://site.test].');
+    expect($html)->not->toContain('Settings saved.');
+    expect(OptionStore::$updates)->toBe([]);
+    expect(OptionStore::$reads)->toBe([]);
 });
 
 it('saves a robots.txt that blocks every crawler once it is confirmed', function (): void {
@@ -163,8 +163,8 @@ it('saves a robots.txt that blocks every crawler once it is confirmed', function
         ['custom_robots_txt', "User-agent: *\nDisallow: /"],
         ['custom_llms_txt', ''],
         ['custom_llms_full_txt', ''],
-    ])->and($html)->toContain('Settings saved.')
-        ->not->toContain('<strong>Warning:</strong>');
+    ])->and($html)->toContain('Settings saved.');
+    expect($html)->not->toContain('<strong>Warning:</strong>');
 });
 
 it('does not treat an empty confirmation as confirmed', function (): void {
@@ -185,9 +185,9 @@ it('points to the editor on the network root, and shows none, on a child site of
 
     expect($html)
         ->toContain('<strong>Host-scoped.</strong>')
-        ->toContain('<a href="[url:https://root.test/1/wp-admin/options-general.php?page=site-txt-files]">Site Files (network root)</a>')
-        ->not->toContain('name="custom_robots_txt"')
-        ->not->toContain('/robots.txt</code>,');
+        ->toContain('<a href="[url:https://root.test/1/wp-admin/options-general.php?page=site-txt-files]">Site Files (network root)</a>');
+    expect($html)->not->toContain('name="custom_robots_txt"');
+    expect($html)->not->toContain('/robots.txt</code>,');
 });
 
 it('saves the two llms files and never the robots.txt on a child site, even one that blocks everything', function (): void {
@@ -204,8 +204,8 @@ it('saves the two llms files and never the robots.txt on a child site, even one 
     expect(OptionStore::$updates)->toBe([
         ['custom_llms_txt', 'a'],
         ['custom_llms_full_txt', 'b'],
-    ])->and($html)->toContain('Settings saved.')
-        ->not->toContain('<strong>Warning:</strong>');
+    ])->and($html)->toContain('Settings saved.');
+    expect($html)->not->toContain('<strong>Warning:</strong>');
 });
 
 it('builds the network root link from the main site on a network', function (): void {
@@ -261,9 +261,11 @@ it('reports GA4 tracking as enabled only with both an id and a secret', function
     $html = Render::capture('ptxt_render_settings_page');
 
     if ($enabled) {
-        expect($html)->toContain('Enabled</span>')->not->toContain('Disabled</span>');
+        expect($html)->toContain('Enabled</span>');
+        expect($html)->not->toContain('Disabled</span>');
     } else {
-        expect($html)->toContain('Disabled</span>')->not->toContain('Enabled</span>');
+        expect($html)->toContain('Disabled</span>');
+        expect($html)->not->toContain('Enabled</span>');
     }
 })->with([
     'both set' => ['G-1', 's', true],

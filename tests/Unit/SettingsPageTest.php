@@ -280,3 +280,11 @@ it('reads the tracking credentials from the network options, defaulting to empty
         ['ptxt_ga4_api_secret', ''],
     ]);
 });
+
+it('starts from the default content when the saved robots.txt is not text', function (): void {
+    OptionStore::$options = ['custom_robots_txt' => ['not', 'text']];
+    when('home_url')->alias(fn (string $path = ''): string => 'https://site.test'.$path);
+
+    expect(Render::capture('ptxt_render_settings_page'))
+        ->toContain('>[textarea:User-agent: *'."\n".'Allow: /');
+});

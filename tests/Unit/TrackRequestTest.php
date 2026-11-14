@@ -88,11 +88,10 @@ it('falls back to an unknown agent and a zero address when the request carries n
 
     ptxt_track_request('llms.txt');
 
-    $event = json_decode($sent->args['body'], true);
-
-    expect($event['client_id'])->toBe('bot.'.substr(md5('unknown'), 0, 16))
-        ->and($event['events'][0]['params']['user_agent'])->toBe('unknown')
-        ->and($event['events'][0]['params']['requester_ip'])->toBe('0.0.0.0');
+    expect(json_decode($sent->args['body'], true))
+        ->toHaveKey('client_id', 'bot.'.substr(md5('unknown'), 0, 16))
+        ->toHaveKey('events.0.params.user_agent', 'unknown')
+        ->toHaveKey('events.0.params.requester_ip', '0.0.0.0');
 });
 
 it('keeps at most the first 500 characters of the user agent', function (): void {
@@ -101,10 +100,9 @@ it('keeps at most the first 500 characters of the user agent', function (): void
 
     ptxt_track_request('llms.txt');
 
-    $event = json_decode($sent->args['body'], true);
-
-    expect($event['events'][0]['params']['user_agent'])->toBe(str_repeat('a', 499).'b')
-        ->and($event['client_id'])->toBe('bot.'.substr(md5(str_repeat('a', 499).'b'), 0, 16));
+    expect(json_decode($sent->args['body'], true))
+        ->toHaveKey('events.0.params.user_agent', str_repeat('a', 499).'b')
+        ->toHaveKey('client_id', 'bot.'.substr(md5(str_repeat('a', 499).'b'), 0, 16));
 });
 
 it('reads the user agent and address as strings', function (): void {
@@ -114,8 +112,19 @@ it('reads the user agent and address as strings', function (): void {
 
     ptxt_track_request('llms.txt');
 
-    $params = json_decode($sent->args['body'], true)['events'][0]['params'];
+    expect(json_decode($sent->args['body'], true))
+        ->toHaveKey('events.0.params.user_agent', '12345')
+        ->toHaveKey('events.0.params.requester_ip', '42');
+});
 
-    expect($params['user_agent'])->toBe('12345')
-        ->and($params['requester_ip'])->toBe('42');
+it('reads a user agent or address that is not a scalar as unknown', function (): void {
+    $sent = Tracking::capture();
+    $_SERVER['HTTP_USER_AGENT'] = ['not', 'a', 'string'];
+    $_SERVER['REMOTE_ADDR'] = ['x'];
+
+    ptxt_track_request('llms.txt');
+
+    expect(json_decode($sent->args['body'], true))
+        ->toHaveKey('events.0.params.user_agent', 'unknown')
+        ->toHaveKey('events.0.params.requester_ip', '0.0.0.0');
 });

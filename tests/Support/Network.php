@@ -20,7 +20,7 @@ final class Network
      * Each site is checked for the calls the plugin must make: one switch and one
      * restore per site, and one home URL read per site that is public.
      *
-     * @param  array<int, array{0: mixed, 1: string}>  $sites  Blog id to [blog_public option, home URL].
+     * @param  array<int, array{0: scalar, 1: string}>  $sites  Blog id to [blog_public option, home URL].
      * @param  int|string  $mainSiteId
      */
     public static function stub(array $sites, $mainSiteId = 1): void
@@ -39,7 +39,7 @@ final class Network
         expect('switch_to_blog')->times(count($sites))->andReturnUsing(function ($id) use (&$current): void {
             $current = (int) $id;
         });
-        expect('get_option')->times(count($sites))->with('blog_public')->andReturnUsing(
+        expect('get_option')->times(count($sites))->with('blog_public', '')->andReturnUsing(
             function () use (&$current, $sites) {
                 return $sites[$current][0];
             }

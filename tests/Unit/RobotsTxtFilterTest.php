@@ -25,7 +25,7 @@ it('leaves the output alone where the editor does not apply, without reading the
 
 it('serves the saved content where the editor applies', function (): void {
     when('is_multisite')->justReturn(false);
-    Functions\expect('get_option')->once()->with('custom_robots_txt')->andReturn("User-agent: *\nDisallow: /private/\n");
+    Functions\expect('get_option')->once()->with('custom_robots_txt', '')->andReturn("User-agent: *\nDisallow: /private/\n");
 
     expect(PluginHooks::callback('filter', 'robots_txt')('wordpress default', true))
         ->toBe("User-agent: *\nDisallow: /private/\n");
@@ -39,6 +39,7 @@ it('keeps the default when nothing is saved or the saved content is empty', func
 })->with([
     'never saved' => [false],
     'saved empty' => [''],
+    'saved as something other than text' => [['not', 'text']],
 ]);
 
 it('serves saved content that is the string zero', function (): void {

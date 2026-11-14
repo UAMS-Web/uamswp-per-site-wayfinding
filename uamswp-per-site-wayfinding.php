@@ -75,6 +75,47 @@ function ptxt_physical_robots_exists(): bool
 }
 
 /**
+ * A WordPress value as a string.
+ *
+ * Options, request values and server values come back as mixed. A scalar is
+ * read as its string form (an integer option reads as "1"); anything else, an
+ * array or null, reads as the default.
+ *
+ * @param  mixed  $value  The value WordPress returned.
+ * @param  string  $default  What a value that is not a scalar reads as.
+ */
+function ptxt_scalar_string(mixed $value, string $default): string
+{
+    return is_scalar($value) ? (string) $value : $default;
+}
+
+/**
+ * A site option as a string, falling back to the default when it is unset or not a scalar.
+ */
+function ptxt_option_string(string $name, string $default): string
+{
+    return ptxt_scalar_string(get_option($name, $default), $default);
+}
+
+/**
+ * A network option as a string, empty when it is unset or not a scalar.
+ */
+function ptxt_site_option_string(string $name): string
+{
+    return ptxt_scalar_string(get_site_option($name, ''), '');
+}
+
+/**
+ * A request value with WordPress' added slashes removed, empty when it is not a string.
+ *
+ * @param  mixed  $value  An element of $_POST or $_GET, or null when it is not set.
+ */
+function ptxt_unslashed_string(mixed $value): string
+{
+    return is_string($value) ? wp_unslash($value) : '';
+}
+
+/**
  * Returns true only if the User-agent: * group contains a Disallow: / rule
  * that is NOT overridden by a subsequent Allow: / in the same group.
  *
@@ -163,7 +204,7 @@ function ptxt_build_multisite_sitemap_block($sitemap_path = '/sitemaps.xml'): st
         // WP_Site::$blog_id is a numeric string; the blog functions take an integer.
         $blog_id = (int) $site->blog_id;
         switch_to_blog($blog_id);
-        if ((string) get_option('blog_public') === '1') {
+        if (ptxt_option_string('blog_public', '') === '1') {
             $home = rtrim(get_home_url($blog_id), '/');
             $line = "Sitemap: {$home}{$sitemap_path}";
 
@@ -202,17 +243,15 @@ function ptxt_build_multisite_sitemap_block($sitemap_path = '/sitemaps.xml'): st
  */
 function ptxt_track_request($file_name): void
 {
-    $measurement_id = get_site_option('ptxt_ga4_measurement_id', '');
-    $api_secret = get_site_option('ptxt_ga4_api_secret', '');
+    $measurement_id = ptxt_site_option_string('ptxt_ga4_measurement_id');
+    $api_secret = ptxt_site_option_string('ptxt_ga4_api_secret');
 
     if (empty($measurement_id) || empty($api_secret)) {
         return;
     }
 
-    $user_agent = isset($_SERVER['HTTP_USER_AGENT'])
-        ? substr((string) $_SERVER['HTTP_USER_AGENT'], 0, 500)
-        : 'unknown';
-    $ip = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
+    $user_agent = substr(ptxt_scalar_string($_SERVER['HTTP_USER_AGENT'] ?? null, 'unknown'), 0, 500);
+    $ip = ptxt_scalar_string($_SERVER['REMOTE_ADDR'] ?? null, '0.0.0.0');
     $site_host = parse_url(home_url(), PHP_URL_HOST);
 
     $client_id = 'bot.'.substr(md5($user_agent), 0, 16);
@@ -265,9 +304,9 @@ add_filter('robots_txt', function ($output, $public) {
     if (! ptxt_robots_editor_applies()) {
         return $output;
     }
-    $custom = get_option('custom_robots_txt');
+    $custom = ptxt_option_string('custom_robots_txt', '');
 
-    return ($custom !== false && $custom !== '') ? $custom : $output;
+    return $custom !== '' ? $custom : $output;
 }, 10, 2);
 
 /**
@@ -288,13 +327,13 @@ add_filter('query_vars', function ($vars) {
 add_action('template_redirect', function (): void {
     if (get_query_var('llms_txt')) {
         header('Content-Type: text/plain; charset=utf-8');
-        echo get_option('custom_llms_txt', '# llms.txt not yet configured for '.home_url()."\n");
+        echo ptxt_option_string('custom_llms_txt', '# llms.txt not yet configured for '.home_url()."\n");
         ptxt_track_request('llms.txt');
         exit; // @codeCoverageIgnore
     }
     if (get_query_var('llms_full_txt')) {
         header('Content-Type: text/plain; charset=utf-8');
-        echo get_option('custom_llms_full_txt', '# llms-full.txt not yet configured for '.home_url()."\n");
+        echo ptxt_option_string('custom_llms_full_txt', '# llms-full.txt not yet configured for '.home_url()."\n");
         ptxt_track_request('llms-full.txt');
         exit; // @codeCoverageIgnore
     }
@@ -371,11 +410,13 @@ function ptxt_render_settings_page(): void
     $needs_confirm = false;
     $robots_applies = ptxt_robots_editor_applies();
 
-    if (isset($_POST['site_txt_files_nonce']) && wp_verify_nonce($_POST['site_txt_files_nonce'], 'save_site_txt_files')) {
+    $nonce = ptxt_unslashed_string($_POST['site_txt_files_nonce'] ?? null);
 
-        $robots_input = isset($_POST['custom_robots_txt']) ? wp_unslash($_POST['custom_robots_txt']) : '';
-        $llms_input = isset($_POST['custom_llms_txt']) ? wp_unslash($_POST['custom_llms_txt']) : '';
-        $llms_full_input = isset($_POST['custom_llms_full_txt']) ? wp_unslash($_POST['custom_llms_full_txt']) : '';
+    if ($nonce !== '' && wp_verify_nonce($nonce, 'save_site_txt_files')) {
+
+        $robots_input = ptxt_unslashed_string($_POST['custom_robots_txt'] ?? null);
+        $llms_input = ptxt_unslashed_string($_POST['custom_llms_txt'] ?? null);
+        $llms_full_input = ptxt_unslashed_string($_POST['custom_llms_full_txt'] ?? null);
 
         // Only validate/save robots.txt on subsites where the editor applies.
         $has_disallow_all = $robots_applies && ptxt_wildcard_disallows_root($robots_input);
@@ -397,15 +438,15 @@ function ptxt_render_settings_page(): void
     }
 
     if (! $needs_confirm) {
-        $robots = esc_textarea(get_option('custom_robots_txt', ptxt_default_robots()));
-        $llms = esc_textarea(get_option('custom_llms_txt', ''));
-        $llms_full = esc_textarea(get_option('custom_llms_full_txt', ''));
+        $robots = esc_textarea(ptxt_option_string('custom_robots_txt', ptxt_default_robots()));
+        $llms = esc_textarea(ptxt_option_string('custom_llms_txt', ''));
+        $llms_full = esc_textarea(ptxt_option_string('custom_llms_full_txt', ''));
     }
 
     $current_site_url = home_url();
 
-    $tracking_id = get_site_option('ptxt_ga4_measurement_id', '');
-    $tracking_secret = get_site_option('ptxt_ga4_api_secret', '');
+    $tracking_id = ptxt_site_option_string('ptxt_ga4_measurement_id');
+    $tracking_secret = ptxt_site_option_string('ptxt_ga4_api_secret');
     $tracking_on = ! empty($tracking_id) && ! empty($tracking_secret);
 
     $physical_robots = $robots_applies && ptxt_physical_robots_exists();
@@ -561,21 +602,19 @@ function ptxt_render_network_tracking_page(): void
 
     $saved = false;
 
-    if (isset($_POST['site_txt_tracking_nonce']) && wp_verify_nonce($_POST['site_txt_tracking_nonce'], 'save_site_txt_tracking')) {
-        $measurement_id = isset($_POST['ptxt_ga4_measurement_id'])
-            ? trim(wp_unslash($_POST['ptxt_ga4_measurement_id']))
-            : '';
-        $api_secret = isset($_POST['ptxt_ga4_api_secret'])
-            ? trim(wp_unslash($_POST['ptxt_ga4_api_secret']))
-            : '';
+    $nonce = ptxt_unslashed_string($_POST['site_txt_tracking_nonce'] ?? null);
+
+    if ($nonce !== '' && wp_verify_nonce($nonce, 'save_site_txt_tracking')) {
+        $measurement_id = trim(ptxt_unslashed_string($_POST['ptxt_ga4_measurement_id'] ?? null));
+        $api_secret = trim(ptxt_unslashed_string($_POST['ptxt_ga4_api_secret'] ?? null));
 
         update_site_option('ptxt_ga4_measurement_id', sanitize_text_field($measurement_id));
         update_site_option('ptxt_ga4_api_secret', sanitize_text_field($api_secret));
         $saved = true;
     }
 
-    $measurement_id = esc_attr(get_site_option('ptxt_ga4_measurement_id', ''));
-    $api_secret = esc_attr(get_site_option('ptxt_ga4_api_secret', ''));
+    $measurement_id = esc_attr(ptxt_site_option_string('ptxt_ga4_measurement_id'));
+    $api_secret = esc_attr(ptxt_site_option_string('ptxt_ga4_api_secret'));
     ?>
     <div class="wrap">
         <h1>Site Files Tracking</h1>
@@ -658,7 +697,7 @@ function ptxt_render_sitemap_generator_page(): void
     }
 
     $default_path = '/sitemaps.xml';
-    $requested_path = isset($_GET['path']) ? sanitize_text_field(wp_unslash($_GET['path'])) : $default_path;
+    $requested_path = isset($_GET['path']) ? sanitize_text_field(ptxt_unslashed_string($_GET['path'])) : $default_path;
     if ($requested_path === '') {
         $requested_path = $default_path;
     }

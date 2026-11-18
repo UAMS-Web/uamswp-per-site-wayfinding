@@ -50,7 +50,9 @@ The generated block:
 - lists the network root site first and the rest in alphabetical order of their line, ignoring case;
 - includes a subsite only when it is public on the network and its search engine visibility setting is on;
 - reads at most 500 public subsites;
-- shows **No public subsites found on this network.** when there is nothing to list, and on a single site that is not a network.
+- shows **No public subsites found on this network.** when there is nothing to list.
+
+The page exists only in Network Admin, so a single site that is not a network has no Sitemap Block Generator.
 
 ## Options at a glance
 

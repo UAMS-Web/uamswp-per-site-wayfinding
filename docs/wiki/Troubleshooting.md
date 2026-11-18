@@ -50,7 +50,7 @@ Saving shows:
 Warning: the robots.txt content you submitted contains Disallow: /, which blocks all crawlers from the entire site.
 ```
 
-**Cause:** a `User-agent: *` group contains `Disallow: /` and no `Allow: /`. The guard asks before blocking every crawler.
+**Cause:** a `Disallow: /` line sits under a `User-agent: *` line, and no `Allow: /` does. The guard asks before blocking every crawler.
 
 **Fix:** if blocking the whole subsite is intended, tick **Yes, I intend to block all crawlers on** the subsite, and save again. Otherwise change the rule; to block one crawler, put `Disallow: /` under that crawler's own `User-agent:` line. [Served files](Served-files.md#the-disallow-guard) lists what the guard flags.
 

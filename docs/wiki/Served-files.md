@@ -22,9 +22,8 @@ On a subdirectory network the two `llms` URLs sit under each subsite's path, for
 
 Saving robots.txt content that blocks every crawler from the whole site needs a ticked confirmation box. The check:
 
-- reads the content one `User-agent:` group at a time, and looks only at groups for `User-agent: *`;
-- flags a line that is exactly `Disallow: /` (any letter case, spaces allowed);
-- is cleared by a line that is exactly `Allow: /` in a `User-agent: *` group;
+- flags a line that is exactly `Disallow: /` (any letter case, spaces allowed) when the closest `User-agent:` line above it is `User-agent: *`;
+- is cleared by a line that is exactly `Allow: /` anywhere under a `User-agent: *` line, before or after the `Disallow: /`;
 - ignores comments (everything after `#`) and blank lines, and accepts any line ending.
 
 | Content | Refused until confirmed? |
@@ -34,8 +33,9 @@ Saving robots.txt content that blocks every crawler from the whole site needs a 
 | `User-agent: *` then `Disallow: /` then `Allow: /` | No |
 | `User-agent: BadBot` then `Disallow: /` | No |
 | `User-agent: *` then `Disallow: /private/` | No |
+| `User-agent: *` then `User-agent: Googlebot` then `Disallow: /` | No, although this group blocks every crawler |
 
-The guard runs only where the robots.txt editor appears.
+The last row is a gap in the guard: a group that lists `*` and then another agent is not checked ([#73](https://github.com/UAMS-Web/uamswp-per-site-wayfinding/issues/73)). The guard runs only where the robots.txt editor appears.
 
 ## The tracking event
 
@@ -45,7 +45,7 @@ When both tracking values are set ([Admin pages and settings](Admin-pages-and-se
 | --- | --- |
 | Event name | `wayfinding_request` |
 | `file_name` | `llms.txt` or `llms-full.txt` |
-| `user_agent` | The request's user agent, cut to 500 characters; `unknown` when there is none |
+| `user_agent` | The request's user agent, cut to 500 bytes; `unknown` when there is none |
 | `requester_ip` | The request's remote address; `0.0.0.0` when there is none |
 | `site_host` | The host of the subsite that served the file |
 | `engagement_time_msec` | `1` |

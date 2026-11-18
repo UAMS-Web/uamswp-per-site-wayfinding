@@ -28,6 +28,6 @@ Two ways forward:
 
 On a subdirectory network at `https://example.com/` whose subsites are `/site-a/` and `/site-b/`:
 
-- `https://example.com/robots.txt` is the network root site's editor content (or the physical file, if one exists).
+- `https://example.com/robots.txt` is the network root site's saved robots.txt content, or WordPress's own output when nothing has been saved (or the physical file, if one exists).
 - `https://example.com/site-a/robots.txt` is not a `robots.txt` any crawler reads.
 - `https://example.com/site-a/llms.txt` and `https://example.com/site-b/llms.txt` each serve their own subsite's content.

@@ -1,0 +1,3 @@
+[Home](Home.md) | [Getting started](Setting-up-the-files-for-a-subsite.md) | [Guides](Keeping-a-physical-robots-txt-current.md) | [Reference](Admin-pages-and-settings.md) | [Troubleshooting](Troubleshooting.md) | [Project](Project.md) | [README](https://github.com/UAMS-Web/uamswp-per-site-wayfinding#readme) | [Repository](https://github.com/UAMS-Web/uamswp-per-site-wayfinding)
+
+Written against the unreleased `main` branch, after v1.3.3. Edit these pages in [`docs/wiki/`](https://github.com/UAMS-Web/uamswp-per-site-wayfinding/tree/main/docs/wiki) through a pull request; edits made in the wiki are overwritten by the next publish.
